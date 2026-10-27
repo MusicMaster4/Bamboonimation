@@ -136,10 +136,11 @@ def test_body_plane_blend_has_no_midpoint_pop_and_random_access_is_stable():
 
 
 @pytest.mark.parametrize('side',['left','right'])
-def test_foreground_sleeve_preserves_coat_pixels_and_keeps_hand_visible(monkeypatch,side):
+@pytest.mark.parametrize('body',[None,BODY_POSES['reach']])
+def test_foreground_sleeve_preserves_coat_pixels_and_keeps_hand_visible(monkeypatch,side,body):
     import bamboonimation.cartoon as cartoon
     actor=Actor();surface=skia.Surface(420,460);c=Canvas(surface.getCanvas(),420,460)
-    body=BODY_POSES['reach'];pose=Pose(left=(-105,-145),right=(112,-145))
+    pose=Pose(left=(-105,-145),right=(112,-145))
     c.raw.clear(skia.ColorWHITE)
     actor.draw(c,210,440,0,body=body,pose=pose,blink=False)
     before=np.array(surface.makeImageSnapshot())

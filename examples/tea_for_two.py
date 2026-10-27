@@ -1,6 +1,6 @@
 """15-second directed cartoon with original drawings and motivated shots.
 
-Reference-study body acting round: variable exposures, anticipation, single-frame smears,
+Body acting round: variable exposures, anticipation, single-frame smears,
 profile replacements, registered cup grips, strong pose changes and contact cuts.
 Render with: python -m bamboonimation render examples/tea_for_two.py -o renders/tea.mp4
 """
@@ -11,10 +11,11 @@ from bamboonimation import Scene, Storyboard, AudioClip, WarpCanvas, LatticeWarp
 from bamboonimation.acting import ExposureSheet
 from bamboonimation.effects import speed_lines
 from bamboonimation.cartoon import (Actor,Rabbit,Pose,FacePose,BodyPose,BODY_POSES,blend_body,POSES,blend_pose,room,table,
-                                     cup,cup_fingers,steam,cue,smooth,accents,grain,INK)
+                                     cup,cup_handle_anchor,cup_handle_grip,steam,cue,smooth,accents,grain,INK)
 
 mira=Actor()
 pip=Rabbit()
+REST_POSE=replace(POSES['idle'],right=(20,-180))
 # All action beats are source-frame boundaries. Export FPS remains independent.
 RELEASE = 115/24
 TAKEOFF = 121/24
@@ -114,7 +115,7 @@ def world(c,t):
                      cue(a,(CATCH,-220),(152/24,-220),(SETTLE,-137))) if a>=CATCH else (-58,-137),
                tilt=cue(a,(0,7),(4.6,7),(CATCH,-4),(7.7,5)))
     elif a>=HAND_RELEASE:
-        p=blend_pose(Pose(left=(-58,-137),right=(63,-135),tilt=-8),POSES['idle'],smooth(HAND_RELEASE,8.7,a))
+        p=blend_pose(Pose(left=(-58,-137),right=(63,-135),tilt=-8),REST_POSE,smooth(HAND_RELEASE,8.7,a))
         if a>12:p=blend_pose(p,Pose(left=(-57,-146),right=(-10,-220),tilt=8),smooth(12,12.7,a)*(1-smooth(13,13.8,a)))
     elif a>=RELEASE:
         p=blend_pose(POSES['surprise'],Pose(left=(-88,-220),right=(159,-231),tilt=-3),smooth(RELEASE,5.3,a))
@@ -124,15 +125,39 @@ def world(c,t):
     walk=0
     receiving=5.3<=a<CATCH
     approaching=.9<=a<1.8
-    if grip or receiving or approaching:
+    releasing=HAND_RELEASE<=a<8.7
+    launching=RELEASE<=a<5.3
+    registered_contact=grip or receiving or approaching or releasing or launching
+    custom_right=True
+    wrist=None
+    if registered_contact:
         gap=85*(1-smooth(5.65,CATCH,a)) if receiving else 0
-        wx,wy=cx-33-gap,cy-22+(65*(1-smooth(5.65,CATCH,a)) if receiving else 0)
+        hand_rotation=rot if grip or releasing or approaching else 0
+        wx,wy=cup_handle_anchor(cx,cy,hand_rotation,handle_side=-1)
+        wx-=gap
+        wy+=65*(1-smooth(5.65,CATCH,a)) if receiving else 0
         if approaching:
-            wx=cue(a,(.9,580.5),(1.8,673));wy=cue(a,(.9,519.5),(1.8,521))
+            wx=cue(a,(.9,580.5),(1.8,638));wy=cue(a,(.9,519.5),(1.8,518))
+        if launching:
+            start_x,start_y=cup_handle_anchor(*cup_state(RELEASE)[:2],handle_side=-1)
+            end_cx,end_cy,_=cup_state(5.3)
+            u=smooth(RELEASE,5.3,a)
+            wx=start_x+(end_cx-68-85-start_x)*u
+            wy=start_y+(end_cy-25+65-start_y)*u
+        if releasing:
+            end_x,end_y,_=mira.hand_anchor('right',ax,ay,a,scale=1.15,pose=REST_POSE,body=body)
+            u=smooth(HAND_RELEASE,8.7,a)
+            wx=wx+(end_x-wx)*u
+            wy=wy+(end_y-wy)*u
+        wrist=(wx,wy)
         p=mira.pose_for_hand('right',(wx,wy),ax,ay,a,scale=1.15,pose=p,walk=walk,
                              squash=squash,rotation=body_angle,body=body)
+    if not registered_contact:
+        wrist=mira.hand_anchor('right',ax,ay,a,scale=1.15,pose=p,body=body)[:2]
+        hand_rotation=0
     expression='shout' if 4.9<a<5.7 else 'worried' if 5.7<a<6.7 else 'sleepy' if 12.5<a<13.0 else 'content' if a>11.4 else 'delighted' if a>8.7 else 'curious'
-    view='profile' if 1.35<=a<8.5 else 'three_quarter' if .9<=a<1.35 else 'front'
+    view=cue(a,(0,0),(.75,0),(1.25,.55),(1.8,1),(8,1),(8.85,.55),
+             (11.5,.55),(11.85,0),(15,0))
     face=None;shoulder_turn=0
     look=(cue(a,(0,0),(.45,0),(.75,4)),
           cue(a,(0,0),(.45,0),(.75,5),(RELEASE,5),(5.1,-4),(5.8,-4),(CATCH,3),(15,3)))
@@ -141,7 +166,7 @@ def world(c,t):
         # Eyes lead; the head follows, then the shoulders counterturn and settle.
         # Face is exposed on ones independently of the body's held drawings.
         ft=math.floor(t*24)/24
-        view='three_quarter'
+        view=cue(a,(9,.55),(9.62,.55),(10.03,.32),(10.7,.48),(11.5,.55))
         look=(cue(ft,(9,1),(9.28,1),(9.52,4)),cue(ft,(9,5),(9.28,5),(9.52,2.5),(10.5,3.3)))
         p=replace(p,tilt=cue(a,(9,-8),(9.55,-8),(9.9,12),(10.3,5)),
                   lean=cue(a,(9,0),(9.55,0),(10,-8),(10.4,-3),(11.5,0)))
@@ -153,6 +178,8 @@ def world(c,t):
                       jaw=cue(ft,(9,2),(9.6,5),(10.1,-2),(10.55,5),(11.4,0)))
         blink=10.35<=ft<10.46 or 11.15<=ft<11.23
         expression='worried' if ft<9.85 else 'content' if ft<10.45 or ft>=11.2 else 'delighted'
+    if not registered_contact:
+        wrist=mira.hand_anchor('right',ax,ay,a,scale=1.15,pose=p,body=body)[:2]
     # Connected actor remains readable through the extreme action. The single
     # smear extends its silhouette; it does not replace the body with fragments.
     height=max(0,669-ay)
@@ -166,14 +193,14 @@ def world(c,t):
         mira.draw(actor_canvas,0,0,a,scale=1.15,pose=p,expression=expression,view=view,
                   look=look,face=face,shoulder_turn=shoulder_turn,blink=blink,walk=walk,body=body,shadow=False,
                   front_hands=('right',) if 12<a<13.8 else (),
-                  hand_shapes={'right':'open'} if receiving or approaching or HAND_RELEASE<=a<8.2 else {},
+                  hand_shapes={'right':'none'} if custom_right else {},
                   squash=squash)
     table(c)
-    if grip or approaching or HAND_RELEASE<=a<8.2:
+    if custom_right:
         # The table may cover the torso, but the grasping forearm is above it.
         with c.transform(x=ax,y=ay,rotation=body_angle):
-            mira.draw_arm(c,'right',0,0,a,scale=1.15,pose=p,walk=walk,squash=squash,
-                          shape='open' if approaching or a>=HAND_RELEASE else 'fist',body=body,occlude_root=True)
+            mira.draw_arm(actor_canvas,'right',0,0,a,scale=1.15,pose=p,walk=walk,squash=squash,
+                          shape='none',body=body,shoulder_turn=shoulder_turn,occlude_root=True)
     c.ellipse(707,549,46,8,'#e9ce9f',INK,1.3)
     # Ear drag: the head recoils before the long ears settle back into the model.
     squash=cue(a,(0,1),(3.5,1),(4.0,.93),(4.4,.77),(4.59,.71),(4.71,1.23),
@@ -186,8 +213,19 @@ def world(c,t):
             q=(a-4.65)*3
             c.ellipse(970-q*(70+i*25),477+i*8-q*22,3+i,1.7,'#e9ead399')
         accents(c,984,419,a)
-    cup(c,cx,cy,rot)
-    if grip: cup_fingers(c,cx,cy,rot)
+    cup(c,cx,cy,rot,handle_side=-1)
+    if custom_right:
+        # The custom hand shares the exact solved wrist and the handle orientation.
+        # It closes around the loop; it never grips the opposite cup wall.
+        closure=(smooth(1.58,1.8,a) if approaching else
+                 1-smooth(RELEASE-2/24,RELEASE+3/24,a) if launching or RELEASE-2/24<=a<RELEASE else
+                 smooth(CATCH-3/24,CATCH,a) if receiving else
+                 1-smooth(SETDOWN,HAND_RELEASE+3/24,a) if SETDOWN<=a<8.3 else 1)
+        if releasing:
+            closure=max(1-smooth(SETDOWN,HAND_RELEASE+3/24,a),smooth(8.3,8.65,a))
+        local_x,local_y=cup_handle_anchor(0,0,hand_rotation,handle_side=-1)
+        cup_handle_grip(actor_canvas,wrist[0]-local_x,wrist[1]-local_y,hand_rotation,
+                        handle_side=-1,closure=closure,skin=mira.skin)
 
     steam(c,cx,cy-66,a,amount=1-smooth(4.7,5.1,a))
     # Hand-drawn tea droplets continue after the cup stops, establishing weight.

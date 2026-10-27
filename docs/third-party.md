@@ -1,4 +1,4 @@
-# Dependências, assets e referência
+# Dependências e assets
 
 O código original do projeto está sob [PolyForm Noncommercial 1.0.0](../LICENSE). As dependências continuam sujeitas às suas próprias licenças; a licença do Bamboonimation não as substitui.
 
@@ -17,9 +17,3 @@ Verifique as versões efetivamente instaladas e seus avisos antes de redistribui
 ## Fontes
 
 Texto usa as fontes disponíveis no sistema quando uma família é solicitada. Para renders consistentes entre máquinas, instale e utilize uma fonte licenciada explicitamente para seu projeto. Uma fonte existir no seu computador não concede o direito de distribuí-la.
-
-## Referência de direção artística
-
-[CEREAL! — Animated Student Film](https://www.youtube.com/watch?v=nCKwUB8EVbc), de XrayAlphaCharlie, foi indicado como referência visual. O estudo considera contornos irregulares, cores suaves, profundidade do cenário e atuação por poses. O curta, seus personagens, frames, logotipos e áudio não estão incluídos no projeto. Os exemplos devem usar desenhos e histórias originais.
-
-O framework é uma ferramenta de autoria: ele não gera, transfere ou licencia automaticamente o estilo ou a propriedade intelectual de terceiros.

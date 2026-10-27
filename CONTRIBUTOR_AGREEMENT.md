@@ -21,4 +21,4 @@ Use `git commit -s` para acrescentar o campo de certificação. Esse campo inclu
 
 ## Revisão e inclusão
 
-Os mantenedores podem pedir esclarecimentos de autoria ou licença e recusar materiais cuja origem ou compatibilidade não esteja demonstrada. Uma contribuição não é aceita apenas por ter sido enviada. Assets copiados da referência visual do projeto não devem ser incluídos sem autorização dos respectivos titulares.
+Os mantenedores podem pedir esclarecimentos de autoria ou licença e recusar materiais cuja origem ou compatibilidade não esteja demonstrada. Uma contribuição não é aceita apenas por ter sido enviada. Assets copiados de obras de terceiros não devem ser incluídos sem autorização dos respectivos titulares.

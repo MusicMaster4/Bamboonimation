@@ -8,7 +8,7 @@ from dataclasses import dataclass, replace
 from functools import lru_cache
 import math
 import skia
-from .drawing import Canvas, color
+from .drawing import Canvas, color, svg_path
 from .procedural import StaticLayer
 from .deformation import LatticeWarp, warp_path
 
@@ -62,12 +62,12 @@ class Pose:
 
 @dataclass(frozen=True)
 class FacePose:
-    """Independent 3/4-face acting controls in head-local logical units.
+    """Independent facial acting controls in head-local logical units.
 
     eye_open is (screen-left, screen-right), from closed 0 to fully open 1.
     brow_offset uses the same order; negative values raise a brow. cheek raises
     the near cheek and mouth corner; jaw lowers the chin independently. These
-    controls apply to the separately authored ``three_quarter`` view only.
+    controls apply across the continuous head turn from front to profile.
     """
     eye_open: tuple = (1.,1.)
     brow_offset: tuple = (0.,0.)
@@ -248,6 +248,18 @@ def _body_coat(body,shoulder_turn=0):
     return coat,(left_shoulder,right_shoulder,neck,left_hip,right_hip,lmid,rmid,bottom)
 
 
+
+def _legacy_coat(shoulder_turn=0):
+    """Shared visible coat boundary for the unarticulated actor and arm mask."""
+    if shoulder_turn==0:
+        return svg_path('M -36 -198 Q -51 -164 -47 -109 Q -31 -92 4 -98 '
+                        'L 46 -103 Q 55 -144 35 -197 L 12 -212 Z')
+    u=shoulder_turn;near=-38-7*u;far=34-10*u
+    return svg_path(f'M {near} {-198-8*u} Q {-54-4*u} -163 {-45-3*u} -108 '
+                    f'Q {-26-2*u} -92 {7-7*u} -99 L {43-9*u} -104 '
+                    f'Q {53-11*u} -147 {far} {-197+8*u} L {8-8*u} -211 Z')
+
+
 class Actor:
     """Mira, an original articulated actor with replaceable head/body drawing.
 
@@ -319,12 +331,12 @@ class Actor:
         if face is not None and not isinstance(face,FacePose): raise TypeError('face must be a FacePose')
         if not math.isfinite(shoulder_turn) or not -1<=shoulder_turn<=1: raise ValueError('shoulder_turn must be in [-1, 1]')
         hand_shapes=hand_shapes or {}
-        if any(side not in ('left','right') or shape not in ('fist','open') for side,shape in hand_shapes.items()):
-            raise ValueError('hand_shapes maps left/right to fist/open')
+        if any(side not in ('left','right') or shape not in ('fist','open','none') for side,shape in hand_shapes.items()):
+            raise ValueError('hand_shapes maps left/right to fist/open/none')
         def draw_hand(side,target):
             name='left' if side<0 else 'right'
             if hand_shapes.get(name)=='open': open_hand(c,*target,rotation=side*12)
-            else: hand(c,*target,angle=side*12)
+            elif hand_shapes.get(name)!='none': hand(c,*target,angle=side*12)
         blink = (abs((t+0.3)%3.7-1.2)<.065) if blink is None else blink
         bob=math.sin(t*2.4)*1.2 + abs(math.sin(walk))*4
         body=_body_pose(body)
@@ -349,8 +361,7 @@ class Actor:
                     limb(c,[shoulder,elbow,target],self.shirt,24)
                     draw_hand(side,target)
                 if shoulder_turn==0:
-                    c.path('M -36 -198 Q -51 -164 -47 -109 Q -31 -92 4 -98 '
-                           'L 46 -103 Q 55 -144 35 -197 L 12 -212 Z',self.shirt,INK,1.8)
+                    c.path(_legacy_coat(shoulder_turn),self.shirt,INK,1.8)
                     c.path('M -35 -184 Q -26 -143 -33 -107 L -15 -101 L -7 -196 Z','#e18b60',None)
                     c.path('M 8 -199 L 5 -104 M -19 -145 Q -6 -140 0 -144',None,'#96574d',1.5)
                     c.path('M -30 -111 L -20 -178 L 28 -179 L 34 -111 Z','#566b75',INK,2)
@@ -361,9 +372,7 @@ class Actor:
                     # A turned coat has a near side plane, uneven shoulders and
                     # displaced bib/seams, rather than a rotated frontal panel.
                     u=shoulder_turn; near=-38-7*u; far=34-10*u
-                    c.path(f'M {near} {-198-8*u} Q {-54-4*u} -163 {-45-3*u} -108 '
-                           f'Q {-26-2*u} -92 {7-7*u} -99 L {43-9*u} -104 '
-                           f'Q {53-11*u} -147 {far} {-197+8*u} L {8-8*u} -211 Z',self.shirt,INK,1.8)
+                    c.path(_legacy_coat(shoulder_turn),self.shirt,INK,1.8)
                     c.path(f'M {near+1} -185 Q {-39-8*u} -137 {-38-4*u} -109 L {-18-8*u} -102 L {-14-9*u} -196 Z','#e18b60',None)
                     c.path(f'M {13-16*u} -198 L {8-12*u} -104',None,'#96574d',1.5)
                     c.path(f'M {-30-5*u} -111 L {-22-7*u} {-179-4*u} L {26-9*u} {-177+4*u} L {30-7*u} -112 Z','#566b75',INK,2)
@@ -372,10 +381,10 @@ class Actor:
                     c.path(f'M {-15-7*u} -147 Q {-7*u} -141 {14-7*u} -147 L {12-7*u} -127 Q {-7*u} -121 {-13-7*u} -128 Z','#70848a',INK,1.5)
                 c.path('M -12 -243 L -13 -193 Q 2 -185 16 -198 L 18 -243 Z',self.skin,INK,2)
                 with c.transform(x=0,y=-237,rotation=p.tilt):
-                    if view == 'profile': self.profile(c,t,expression,look,blink)
-                    elif view == 'front': self.head(c,t,expression,look,blink)
-                    elif view == 'three_quarter': self.three_quarter(c,t,expression,look,blink,face or FacePose())
-                    else: raise ValueError('Actor view must be front, profile or three_quarter')
+                    if view=='front' and face is None:self.head(c,t,expression,look,blink)
+                    elif view=='profile' and face is None:self.profile(c,t,expression,look,blink)
+                    elif view=='three_quarter':self.three_quarter(c,t,expression,look,blink,face)
+                    else:self.draw_head(c,t,expression,look,blink,view,face)
                 # Gesture arms can pass in front of the coat and face.
                 for side_name in front_hands:
                     side=-1 if side_name=='left' else 1
@@ -390,14 +399,14 @@ class Actor:
 
         Match the actor's transform arguments, then draw the foreground object
         and call this method, including the same body and shoulder_turn. Draw
-        the held object and its near fingers last. With body and occlude_root=True,
+        the held object and its near fingers last. With occlude_root=True,
         the proximal sleeve stays behind the coat boundary, while its distal
         portion can cover a prop. The hand itself is never masked. Keep False
         for a gesture intentionally crossing in front of the torso.
         """
         if not isinstance(occlude_root,bool): raise ValueError('occlude_root must be boolean')
-        if side not in ('left','right') or shape not in ('fist','open'):
-            raise ValueError('Use left/right arm and fist/open hand shape')
+        if side not in ('left','right') or shape not in ('fist','open','none'):
+            raise ValueError('Use left/right arm and fist/open/none hand shape')
         p=POSES[pose] if isinstance(pose,str) else pose
         sign=-1 if side=='left' else 1
         body=_body_pose(body)
@@ -421,7 +430,7 @@ class Actor:
                     with c.transform(x=body.chest[0],y=body.chest[1]-182,rotation=body.chest_angle):
                         c.translate(0,182)
                         if shape=='open':open_hand(c,*target,rotation=sign*12)
-                        else:hand(c,*target,angle=sign*12)
+                        elif shape!='none':hand(c,*target,angle=sign*12)
             return
         target=p.left if sign<0 else p.right
         bob=math.sin(t*2.4)*1.2+abs(math.sin(walk))*4
@@ -429,9 +438,14 @@ class Actor:
             with c.transform(x=p.lean,y=p.crouch+bob,rotation=-p.lean*.15):
                 shoulder=_shoulder(sign,shoulder_turn)
                 elbow=((shoulder[0]+target[0])*.52+sign*17,(shoulder[1]+target[1])*.5+19)
-                limb(c,[shoulder,elbow,target],self.shirt,24)
+                with c.saved():
+                    if occlude_root:
+                        neighborhood=skia.Path();neighborhood.addCircle(*shoulder,45)
+                        mask=skia.Op(_legacy_coat(shoulder_turn),neighborhood,skia.PathOp.kIntersect_PathOp)
+                        c.raw.clipPath(mask,skia.ClipOp.kDifference,doAntiAlias=True)
+                    limb(c,[shoulder,elbow,target],self.shirt,24)
                 if shape=='open': open_hand(c,*target,rotation=sign*12)
-                else: hand(c,*target,angle=sign*12)
+                elif shape!='none': hand(c,*target,angle=sign*12)
 
     def _posed_arm(self,c,side,target,body,shape,shoulder_turn=0,draw_hand=True):
         """A curved, tapered sleeve with a cuff plane; one continuous outline."""
@@ -463,7 +477,7 @@ class Actor:
         c.path(f'M {center[0]-nx*5} {center[1]-ny*5} Q {center[0]+vx*.025} {center[1]+vy*.025} {center[0]+nx*4} {center[1]+ny*4}',None,'#96574d',1.1)
         if draw_hand:
             if shape=='open':open_hand(c,*target,rotation=side*12)
-            else:hand(c,*target,angle=side*12)
+            elif shape!='none':hand(c,*target,angle=side*12)
 
     def _draw_posed(self,c,x,y,t,scale,p,expression,look,blink,walk,facing,squash,
                     view,front_hands,hand_shapes,face,shoulder_turn,body,shadow):
@@ -544,147 +558,136 @@ class Actor:
                     c.path(f'M {-12+hx*.6} {-243+hy} Q -13 -218 -13 -195 Q 2 -188 16 -198 '
                            f'Q {17+hx*.35} -221 {18+hx*.6} {-243+hy} Z',self.skin,INK,1.8)
                     with c.transform(hx,-237+hy,rotation=p.tilt+body.head_angle):
-                        if view=='front':self.head(c,t,expression,look,blink)
-                        elif view=='profile':self.profile(c,t,expression,look,blink)
-                        elif view=='three_quarter':self.three_quarter(c,t,expression,look,blink,face or FacePose())
-                        else:raise ValueError('Actor view must be front, profile or three_quarter')
+                        if view=='front' and face is None:self.head(c,t,expression,look,blink)
+                        elif view=='profile' and face is None:self.profile(c,t,expression,look,blink)
+                        elif view=='three_quarter':self.three_quarter(c,t,expression,look,blink,face)
+                        else:self.draw_head(c,t,expression,look,blink,view,face)
                     for side_name in front_hands:
                         side=-1 if side_name=='left' else 1
                         target=p.left if side<0 else p.right
                         self._posed_arm(c,side,target,body,hand_shapes.get(side_name,'fist'),shoulder_turn)
 
-    def three_quarter(self,c,t,expression,look,blink,face=None):
-        """Right-facing 3/4 replacement with distinct near/far facial planes.
+    def draw_head(self,c,t,expression,look,blink,view='front',face=None):
+        """Draw one continuous head model, with yaw 0 (front) through 1 (profile).
 
-        The near eye/cheek are wider; the far eye wraps toward the nose. This
-        drawing changes silhouette, occlusion and feature placement rather than
-        rotating/scaling the front face. Controls sample independently each call.
+        String views remain shortcuts: front=0, three_quarter=.55, profile=1.
+        Numeric yaw moves the actual contours and facial landmarks; it never
+        overlays/crossfades two drawings. The same far-eye visibility also gates
+        its eyebrow, and the nose is a single unioned form at every angle.
         """
-        face=face or FacePose()
-        j=face.jaw; cheek=face.cheek
-        c.path('M -45 -17 C -61 -41 -57 -81 -35 -94 Q -8 -111 19 -94 '
-               'Q 45 -99 57 -71 L 48 -43 L 27 -28 L -16 -9 Z',self.hair,INK,1.8)
-        # Near cheek rounds into a diagonal jaw; the nose breaks the far contour.
-        c.path(f'M -32 -67 Q -6 -87 24 -66 Q 38 -57 37 -39 '
-               f'L 50 -26 Q 58 -21 43 -17 L 41 {3+j*.25} '
-               f'Q 31 {19+j} 7 {23+j} Q {-20-cheek*.35} {16+j*.7} -31 -10 Z',self.skin,INK,1.8)
-        c.path(f'M 32 -48 Q 42 -34 35 -15 L 38 {2+j*.25} Q 24 {17+j} 7 {23+j} '
-               f'Q 31 {24+j} 42 {7+j*.3} L 44 -17 Q 57 -21 49 -26 Z','#db947f',None)
-        c.path('M -30 -37 Q -48 -49 -49 -27 Q -48 -10 -29 -12',self.skin,INK,1.7)
-        c.path('M -39 -32 Q -32 -34 -33 -23',None,'#b77970',1.3)
-        # Forelock exposes a small far temple, while the near lock crosses brow.
-        c.path('M -47 -45 Q -61 -73 -38 -88 L -45 -99 Q -16 -106 3 -90 '
-               'Q 21 -103 43 -88 L 58 -76 L 44 -63 L 28 -68 '
-               'Q 15 -49 -3 -46 L 4 -69 Q -11 -43 -29 -40 L -27 -61 '
-               'Q -36 -48 -47 -45 Z',self.hair,INK,1.8)
-        c.path('M -34 -84 Q -13 -96 3 -80 M 22 -85 Q 35 -87 44 -77',None,'#58717c',1.8)
-        c.ellipse(-15,-6-cheek,11,5,'#e29583');c.ellipse(35,-7-cheek*.35,5,3.5,'#d9897a')
-        for xx,yy in [(-21,-10),(-14,-12),(-8,-9),(33,-10)]:c.ellipse(xx,yy-cheek*.5,.8,.9,INK)
-        lx=max(-4,min(4,look[0]));ly=max(-5,min(5,look[1]))
-        sleepy=expression=='sleepy'
-        surprised=expression in ('surprise','shout')
-        for i,(ex,ey,rx,ry) in enumerate([(-7,-31,13,17),(28,-34,7.5,14)]):
-            opening=0 if blink or sleepy else face.eye_open[i]
-            center=ey+ry*.2
-            if opening<.035:
-                c.path(f'M {ex-rx} {center} Q {ex} {center+4} {ex+rx} {center-1}',None,INK,1.8)
-            else:
-                top=ey-ry*opening*(1.08 if surprised else 1)
-                bottom=ey+ry*(.3+.7*opening)
-                outline=f'M {ex-rx} {center} Q {ex-2} {2*top-center} {ex+rx} {center-1} Q {ex+2} {2*bottom-center} {ex-rx} {center} Z'
-                c.path(outline,CREAM,None)
-                with c.clip(outline):
-                    c.ellipse(ex+lx*(.85 if i==0 else .5)+2,ey+ly+3,4.2 if i==0 else 3,6.7 if i==0 else 5.5,INK)
-                    c.ellipse(ex+lx*(.85 if i==0 else .5)+3,ey+ly,1.3,1.7,CREAM)
-                c.path(outline,None,INK,1.6)
-            by=ey-ry-5+face.brow_offset[i]-(4 if surprised else 0)
-            c.path(f'M {ex-rx} {by+3} Q {ex-1} {by-6 if expression=="worried" else by-4} {ex+rx-1} {by+1}',None,INK,2.5 if i==0 else 2)
-        # Nose bridge occludes the inner edge of the small far eye.
-        c.path('M 21 -31 L 17 -13 Q 24 -7 31 -14',None,'#ad7168',1.5)
-        my=5+j*.35
-        if expression in ('shout','surprise'):
-            c.path(f'M 7 {my-5} Q 22 {my-12} 34 {my-4} Q 38 {my+17+j*.35} 20 {my+20+j*.35} Q 5 {my+17} 7 {my-5} Z',INK,INK,1.2)
-            c.path(f'M 11 {my-3} Q 22 {my-7} 31 {my-3} L 29 {my+3} Q 19 {my+1} 12 {my+4} Z',CREAM,None)
-            c.path(f'M 17 {my+16+j*.25} Q 25 {my+9} 29 {my+15+j*.2}',None,'#d98982',3)
-        elif expression=='worried':
-            c.path(f'M 9 {my+4} Q 23 {my-4} 35 {my+1-cheek*.3}',None,INK,1.8)
-        elif expression=='delighted':
-            c.path(f'M 5 {my-3} Q 20 {my+3} 35 {my-7-cheek*.3} Q 31 {my+17} 18 {my+16} Q 8 {my+12} 5 {my-3} Z',INK,INK,1.3)
-            c.path(f'M 9 {my-1} Q 22 {my+3} 31 {my-4} L 29 {my+2} Q 18 {my+7} 11 {my+4} Z',CREAM,None)
+        views={'front':0.,'three_quarter':.55,'profile':1.}
+        if isinstance(view,str):
+            if view not in views:raise ValueError('Actor view must be front, profile, three_quarter or numeric yaw in [0, 1]')
+            yaw=views[view]
         else:
-            c.path(f'M 6 {my+2} Q 20 {my+13-cheek*.25} 35 {my-3-cheek*.5}',None,INK,1.8)
-            c.path(f'M 33 {my-6-cheek*.5} L 37 {my-cheek*.5}',None,INK,1.2)
+            if isinstance(view,bool) or not isinstance(view,(int,float)) or not math.isfinite(view) or not 0<=view<=1:
+                raise ValueError('Actor numeric view yaw must be finite and in [0, 1]')
+            yaw=float(view)
+        face=face or FacePose()
+        if not isinstance(face,FacePose):raise TypeError('face must be a FacePose')
+        self._turned_head(c,t,expression,look,blink,yaw,face)
+
+    def three_quarter(self,c,t,expression,look,blink,face=None):
+        self.draw_head(c,t,expression,look,blink,.55,face)
 
     def profile(self,c,t,expression,look,blink):
-        # A separately authored silhouette: turning never crossfades two faces.
-        c.path('M -48 -28 Q -64 -64 -44 -90 Q -12 -111 25 -88 L 38 -60 L 20 -46 L 0 -21 Z',self.hair,INK,1.8)
-        c.path('M -31 -69 Q 1 -83 25 -61 L 29 -35 L 46 -21 Q 50 -14 35 -12 L 32 6 Q 16 24 -8 12 L -25 -9 Z',self.skin,INK,1.8)
-        c.path('M -20 -11 Q -43 -5 -43 -25 Q -42 -44 -25 -34',self.skin,INK,1.6)
-        c.path('M -34 -29 Q -27 -31 -28 -20',None,'#b77970',1.3)
-        c.path('M -48 -50 Q -62 -82 -34 -90 L -41 -102 Q -9 -106 7 -90 Q 28 -99 45 -78 L 52 -68 L 27 -57 L 11 -69 Q -3 -43 -22 -41 L -19 -66 Z',self.hair,INK,1.8)
-        c.path('M -36 -83 Q -15 -93 3 -79',None,'#58717c',2)
-        if blink: c.path('M 3 -30 Q 16 -26 27 -33',None,INK,2)
-        else:
-            c.ellipse(15,-34,10,17,CREAM,INK,1.6)
-            c.ellipse(19+max(-2,min(2,look[0])),-32,4,6,INK)
-            c.ellipse(21,-35,1.2,1.7,CREAM)
-        c.path('M 3 -56 Q 17 -65 28 -54' if expression!='worried' else 'M 3 -59 Q 18 -64 29 -47',None,INK,2.7)
-        c.ellipse(8,-5,10,5,'#e29583')
-        if expression in ('surprise','shout'):
-            c.path('M 13 0 Q 25 -2 31 -8 Q 31 17 18 15 Z',INK,INK,1.3)
-            c.path('M 18 12 Q 23 6 27 11',None,'#d98982',3)
-        elif expression=='worried': c.path('M 13 8 Q 22 1 32 6',None,INK,1.8)
-        else: c.path('M 12 4 Q 25 10 33 0',None,INK,1.8)
+        self.draw_head(c,t,expression,look,blink,1.)
 
     def head(self,c,t,expression,look,blink):
-        c.path('M -47 -21 C -71 -43 -66 -84 -37 -91 Q -13 -115 13 -94 '
-               'Q 46 -108 59 -78 L 68 -61 L 49 -54 L 52 -10 Z',self.hair,INK,1.8)
-        c.path('M -45 -37 Q -62 -45 -63 -22 Q -59 -7 -45 -12',self.skin,INK,2)
-        c.path('M -51 -31 Q -57 -34 -56 -22',None,'#b77970',1.5)
-        face='M -43 -64 C -49 -34 -45 0 -23 17 Q -5 32 24 13 Q 45 1 43 -45 L 26 -75 Z'
-        if expression=='shout':
-            jaw=LatticeWarp((-60,-100,65,40),[[(0,0),(0,0)],[(0,0),(0,0)],[(-4,35),(4,35)]])
-            face=warp_path(face,jaw)
-        c.path(face,self.skin,INK,1.8)
-        c.path('M 30 -52 Q 49 -28 35 -2 Q 22 18 2 20 Q 30 23 42 3 L 46 -43 Z','#db947f',None)
-        c.path('M -50 -57 Q -62 -78 -38 -84 L -48 -99 Q -17 -106 0 -88 '
-               'Q 19 -108 46 -87 L 65 -81 L 44 -60 Q 20 -52 6 -68 '
-               'Q -7 -42 -27 -41 L -20 -69 Q -33 -51 -50 -47 Z',self.hair,INK,1.8)
-        c.path('M -37 -85 Q -13 -95 1 -80 M 20 -86 Q 37 -87 47 -76',None,'#58717c',2)
-        # Freckles and uneven cheeks make the face less geometric.
-        c.ellipse(-29,-8,12,6,'#e29583'); c.ellipse(30,-11,10,5,'#e29583')
-        for xx,yy in [(-34,-12),(-26,-10),(-29,-15),(27,-15),(34,-16)]: c.ellipse(xx,yy,.9,1,INK)
-        surprised=expression in ('surprise','shout')
-        sleepy=expression=='sleepy'
-        for ex,ey,rx,ry in [(-20,-28,13,18),(17,-31,14,20)]:
-            if blink or sleepy:
-                c.path(f'M {ex-12} {ey} Q {ex} {ey+6} {ex+12} {ey-1}',None,INK,2)
+        self.draw_head(c,t,expression,look,blink,0.)
+
+    def _turned_head(self,c,t,expression,look,blink,yaw,face):
+        from .drawing import svg_path
+        # All contours share front/profile correspondence. One set of drawing
+        # commands carries the skull, forelock, cheek, mouth and nose through a
+        # turn; changing view cannot replace the character's proportions.
+        def mix(a,b):return a+(b-a)*yaw
+        def pt(a,b):return f'{mix(a[0],b[0])} {mix(a[1],b[1])}'
+        cheek=face.cheek
+        jaw=face.jaw+(30 if expression=='shout' else 5 if expression=='surprise' else 0)
+        c.path('M '+pt((-47,-21),(-48,-28))+' C '+pt((-71,-43),(-65,-45))+' '+pt((-66,-84),(-64,-83))+' '+pt((-37,-91),(-39,-91))+
+               ' Q '+pt((-13,-115),(-13,-112))+' '+pt((13,-94),(11,-94))+
+               ' Q '+pt((46,-108),(32,-101))+' '+pt((59,-78),(45,-78))+
+               ' L '+pt((68,-61),(52,-66))+' L '+pt((49,-54),(34,-53))+' L '+pt((52,-10),(14,-15))+' Z',self.hair,INK,1.8)
+        ex=mix(-50,-33);ey=mix(-27,-25)
+        c.path(f'M {ex+8} {ey-9} Q {ex-13} {ey-20} {ex-13} {ey+1} Q {ex-10} {ey+18} {ex+9} {ey+12}',self.skin,INK,1.7)
+        c.path(f'M {ex-5} {ey-4} Q {ex+3} {ey-8} {ex+2} {ey+4}',None,'#b77970',1.3)
+        # A base face has no artificial nose notch. Unioning the projecting nose
+        # removes the cheek outline behind it when the tip reaches the silhouette.
+        outline=('M '+pt((-43,-64),(-31,-69))+' Q '+pt((-7,-86),(-1,-83))+' '+pt((32,-66),(25,-61))+
+                 ' Q '+pt((44,-53),(29,-47))+' '+pt((43,-31),(29,-32))+
+                 f' Q {mix(47,34)} {-9-4*yaw+jaw*.15} {mix(37,31)} {mix(5,6)+jaw*.3}'+
+                 f' Q {mix(25,16)} {mix(21,24)+jaw*.55} {mix(-3,-8)} {mix(23,12)+jaw*.8}'+
+                 f' Q {mix(-31,-20)-cheek*.15} {mix(16,10)+jaw*.5} {mix(-41,-25)} -9'+
+                 ' Q '+pt((-47,-35),(-34,-39))+' '+pt((-43,-64),(-31,-69))+' Z')
+        bridge=mix(0,28);tip=mix(7,47);under=mix(3,35);root=mix(-4,29)
+        nose=f'M {bridge} -31 L {tip} -21 Q {tip+4} -15 {under} -12 Q {root} -8 {root} -14 Z'
+        silhouette=skia.Op(svg_path(outline),svg_path(nose),skia.PathOp.kUnion_PathOp)
+        c.path(silhouette,self.skin,INK,1.8)
+        with c.clip(silhouette):
+            c.path(f'M {mix(30,25)} -54 Q {mix(48,37)} -25 {mix(35,26)} 0 Q {mix(22,12)} {18+jaw*.6} {mix(2,-7)} {20+jaw*.7} '
+                   f'Q {mix(31,18)} {24+jaw*.6} {mix(42,33)} {3+jaw*.25} L {mix(46,31)} -43 Z','#db947f',None)
+            nearx=mix(-29,6)
+            c.ellipse(nearx,-8-cheek,mix(12,9),mix(6,5),'#e29583')
+            far_width=1-smooth(.55,.88,yaw)
+            if far_width>.01:c.ellipse(mix(30,34),-10-cheek*.3,10*far_width,5*far_width,'#e29583')
+            for xx,yy in [(-5,-4),(3,-2),(0,-7)]:c.ellipse(nearx+xx,-8+yy-cheek*.5,.9,1,INK)
+            lx=max(-4,min(4,look[0]));ly=max(-5,min(5,look[1]))
+            surprised=expression in ('surprise','shout')
+            # Near/far eye use the SAME visibility and width as their brows.
+            eyes=[(mix(-20,14),mix(-28,-32),mix(13,10),mix(18,17),1.),
+                  (mix(17,33),mix(-31,-34),14*far_width,mix(20,15),far_width)]
+            for i,(x,y,rx,ry,visible) in enumerate(eyes):
+                if visible<=.025:continue
+                opening=0 if blink or expression=='sleepy' else face.eye_open[i]
+                mid=y+ry*.15
+                if opening<.035:
+                    c.path(f'M {x-rx} {mid} Q {x} {mid+4} {x+rx} {mid-1}',None,INK,1.8)
+                else:
+                    top=y-ry*opening*(1.1 if surprised else 1)
+                    bottom=y+ry*(.25+.75*opening)
+                    eye=f'M {x-rx} {mid} Q {x-2} {2*top-mid} {x+rx} {mid-1} Q {x+2} {2*bottom-mid} {x-rx} {mid} Z'
+                    c.path(eye,CREAM,None)
+                    with c.clip(eye):
+                        px=x+lx*(1-.5*i)+mix(2,1)
+                        c.ellipse(px,y+ly+3,(3.5 if surprised else 4.6)*min(1,visible*1.5),5 if surprised else 6.8,INK)
+                        c.ellipse(px+1,y+ly,1.2*min(1,visible*1.5),1.7,CREAM)
+                    c.path(eye,None,INK,1.6)
+                by=y-ry-5+face.brow_offset[i]-(4 if surprised else 0)
+                slope=(5 if i==0 else -4) if expression=='worried' else 0
+                c.path(f'M {x-rx} {by+2+slope} Q {x} {by-5} {x+rx} {by+1-slope}',None,INK,2.6 if i==0 else 2.2)
+        # A single right-facing bridge/tip/underside, not an inside nose pointing
+        # in the opposite direction to a second nose in the outer contour.
+        c.path(nose,self.skin,None)
+        c.path(f'M {bridge} -31 L {tip} -21 Q {tip+4} -15 {under} -12 Q {root} -8 {root} -14',None,'#ad7168',1.5)
+        mx=mix(4,22);my=5+jaw*.26
+        with c.clip(silhouette), c.transform(mx,my,sx=mix(1,.58)):
+            if expression=='shout':
+                c.path('M -22 -5 C -17 -21 15 -20 24 -8 Q 32 10 19 26 Q -6 35 -21 16 Z',INK,INK,1.3)
+                c.path('M -16 -8 Q 1 -15 20 -6 L 16 1 L 7 -1 L 0 4 L -7 0 L -14 3 Z',CREAM,None)
+                c.path('M -5 22 Q 3 13 13 20 Q 6 29 -5 22 Z','#d98982',None)
+            elif expression=='surprise':
+                c.ellipse(2,4,7,12,INK);c.ellipse(3,11,4.5,3,'#cf817e')
+            elif expression=='worried':
+                c.path(f'M -12 3 Q 1 -6 15 {1-cheek*.25}',None,INK,1.8)
+            elif expression=='delighted':
+                c.path(f'M -16 -6 Q 0 1 17 {-10-cheek*.2} Q 15 15 0 15 Q -12 13 -16 -6 Z',INK,INK,1.3)
+                c.path('M -12 -4 Q 1 1 13 -7 L 11 0 Q -1 6 -10 1 Z',CREAM,None)
+                c.path('M -5 11 Q 3 5 10 11 Q 2 17 -5 11 Z','#d98982',None)
             else:
-                c.ellipse(ex,ey,rx,ry*(1.15 if surprised else 1),CREAM,INK,2)
-                lx=max(-4,min(4,look[0])); ly=max(-5,min(5,look[1]))
-                c.ellipse(ex+lx+2,ey+ly+3,3.5 if surprised else 4.6,5 if surprised else 7.2,INK)
-                c.ellipse(ex+lx+3,ey+ly,1.5,2,CREAM)
-        if expression=='worried':
-            c.path('M -32 -34 Q -21 -43 -7 -35 L -7 -45 L -31 -47 Z',self.skin,None)
-            c.path('M 4 -36 Q 19 -50 30 -40',None,INK,1.5)
-        by=-54 if surprised else -49
-        c.path(f'M -32 {by+2} Q -22 {by-7} -9 {by}',None,INK,2.8)
-        c.path(f'M 7 {by-3} Q 20 {by-10 if expression=="worried" else by-7} 30 {by-3}',None,INK,2.8)
-        c.path('M 0 -27 L -5 -12 Q 1 -8 7 -13',None,'#ae7167',1.6)
-        if expression=='shout':
-            c.path('M -24 3 C -18 -17 16 -16 26 -3 Q 36 18 22 37 Q -6 49 -22 25 Z',INK,INK,1.5)
-            c.path('M -18 -2 Q 1 -10 21 0 L 18 8 L 8 5 L 0 10 L -8 6 L -16 10 Z',CREAM,None)
-            c.path('M -6 31 Q 3 21 15 29 Q 6 39 -6 31 Z','#d98982',None)
-        elif expression in ('surprise','worried'):
-            c.ellipse(6,4,6 if surprised else 4,10 if surprised else 4,INK)
-            if surprised: c.ellipse(7,9,4,3,'#cf817e')
-        elif expression=='delighted':
-            c.path('M -12 -1 Q 3 7 22 -5 Q 18 20 2 18 Q -9 14 -12 -1 Z',INK,INK,1.5)
-            c.path('M -8 1 Q 6 6 17 -2 L 15 5 Q 1 10 -6 6 Z',CREAM,None)
-            c.path('M -3 14 Q 6 7 13 13 Q 6 20 -3 14 Z','#d98982',None)
-        else:
-            c.path('M -10 4 Q 4 13 20 1',None,INK,2)
-            c.path('M 19 -1 L 22 3',None,INK,1.4)
+                c.path(f'M -13 0 Q 1 {12-cheek*.2} 16 {-3-cheek*.35}',None,INK,1.8)
+                c.path(f'M 15 {-6-cheek*.35} L 19 {-1-cheek*.35}',None,INK,1.2)
+        # Forelock is last so eyebrows/eyes cannot accidentally be inked over the
+        # hair. Its control-point correspondence is shared at every yaw.
+        c.path('M '+pt((-50,-57),(-48,-50))+' Q '+pt((-62,-78),(-62,-82))+' '+pt((-38,-84),(-34,-90))+
+               ' L '+pt((-48,-99),(-41,-102))+' Q '+pt((-17,-106),(-9,-106))+' '+pt((0,-88),(7,-90))+
+               ' Q '+pt((19,-108),(28,-99))+' '+pt((46,-87),(45,-78))+
+               ' L '+pt((65,-81),(52,-68))+' L '+pt((44,-60),(27,-57))+
+               ' Q '+pt((20,-52),(18,-61))+' '+pt((6,-68),(11,-69))+
+               ' Q '+pt((-7,-42),(-3,-43))+' '+pt((-27,-41),(-22,-41))+
+               ' L '+pt((-20,-69),(-19,-66))+' Q '+pt((-33,-51),(-36,-48))+' '+pt((-50,-47),(-48,-50))+' Z',self.hair,INK,1.8)
+        c.path('M '+pt((-37,-85),(-36,-83))+' Q '+pt((-13,-95),(-15,-93))+' '+pt((1,-80),(3,-79))+
+               ' M '+pt((20,-86),(22,-85))+' Q '+pt((37,-87),(35,-84))+' '+pt((47,-76),(44,-77)),None,'#58717c',1.8)
 
 
 class Rabbit:
@@ -724,18 +727,55 @@ class Rabbit:
             c.path('M 16 -9 L 34 -3 L 24 7 L 13 -5 Z','#829d95',INK,1.3)
 
 
-def cup(c,x,y,rotation=0,scale=1):
+def cup(c,x,y,rotation=0,scale=1,handle_side=1):
     with c.transform(x=x,y=y,rotation=rotation,sx=scale,sy=scale):
         handle=skia.Path(); handle.moveTo(25,-38); handle.cubicTo(65,-48,58,-4,29,-12)
         pen=skia.Paint(Style=skia.Paint.kStroke_Style,StrokeWidth=7,StrokeCap=skia.Paint.kRound_Cap)
         shape=skia.Path();pen.getFillPath(handle,shape)
-        c.path(skia.Simplify(shape),'#7eaaa4',INK,2)
+        with c.transform(sx=handle_side,sy=1):
+            c.path(skia.Simplify(shape),'#7eaaa4',INK,2)
         c.path('M -30 -48 Q -31 -5 -18 -1 Q 4 8 25 -3 L 33 -48 Z','#8cb5ab',INK,2.5)
         c.path('M 17 -45 L 24 -43 L 18 -9 Q 10 -4 7 -7 Z','#6d9995',None)
         c.ellipse(1,-48,32,8,'#e2d7b4',INK,2)
         c.ellipse(1,-47,26,5,'#795848',None)
         c.path('M -20 -37 L -17 -17',None,'#c4d3ba',3)
         c.path('M -4 -24 L 2 -30 L 7 -22 L 1 -16 Z',CREAM,None)
+
+
+
+def cup_handle_anchor(x,y,rotation=0,scale=1,handle_side=-1):
+    """World wrist contact for the authored handle grip; not the cup body."""
+    a=math.radians(rotation)
+    lx,ly=handle_side*68*scale,-25*scale
+    return x+lx*math.cos(a)-ly*math.sin(a),y+lx*math.sin(a)+ly*math.cos(a)
+
+
+def cup_handle_grip(c,x,y,rotation=0,scale=1,handle_side=-1,closure=1,skin=SKIN):
+    """One connected custom hand around the handle; hide the generic hand.
+
+    Wrist placement matches ``cup_handle_anchor``. The palm, fingers and
+    opposing thumb share one contour, so there are no floating finger caps.
+    """
+    u=max(0,min(1,closure))
+    with c.transform(x=x,y=y,rotation=rotation,sx=-handle_side*scale,sy=scale):
+        palm='M-73 -33 Q-65 -39 -59 -40 Q-50 -44 -44 -38 L-43 -19 Q-45 -10 -55 -10 Q-64 -11 -73 -17 Z'
+        shapes=[svg_path(palm)]
+        finger_lines=[]
+        for (y0,length),(ox,oy) in zip([(-32,17),(-25,18),(-18,15),(-11,13)],[(-48,-64),(-35,-57),(-28,-43),(-26,-28)]):
+            tipx=ox*(1-u)+(-55+length)*u
+            tipy=oy*(1-u)+y0*u
+            path=f'M-58 {y0-4} Q-49 {y0-6} {tipx-2} {tipy-4} Q{tipx+5} {tipy-3} {tipx+3} {tipy+2} Q-47 {y0+7} -59 {y0+3} Z'
+            shapes.append(svg_path(path))
+            finger_lines.append(f'M-56 {y0+3} Q-51 {y0+5} {-47+8*u} {y0+3}')
+        thumb_tip=(-35-7*u,-27-9*u)
+        thumb=f'M-64 -34 Q-63 -46 -55 -46 Q-50 -45 {thumb_tip[0]} {thumb_tip[1]-4} Q{thumb_tip[0]+5} {thumb_tip[1]+2} {thumb_tip[0]-1} {thumb_tip[1]+4} Q-52 -29 -58 -33 Z'
+        shapes.append(svg_path(thumb))
+        outline=shapes[0]
+        for shape in shapes[1:]:outline=skia.Op(outline,shape,skia.PathOp.kUnion_PathOp)
+        c.path(outline,skin,INK,1.4)
+        for line in finger_lines:c.path(line,None,INK,1)
+        c.path('M-61 -31 Q-55 -28 -52 -34',None,INK,1)
+        c.path('M-67 -24 Q-63 -26 -60 -22',None,'#bf7f72',1)
 
 
 def cookie(c,x,y,rotation=0,scale=1):

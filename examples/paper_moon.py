@@ -39,8 +39,8 @@ exposure=ExposureSheet(fps=24)
 f=0
 boundaries=(55,61,68,72,75,76,77,78,80,81,84,124,132,134,138,144,148,156,182,202,209,264,303,360)
 while f<360:
-    hold=1 if 68<=f<=83 or 124<=f<=143 else 2
-    if f in (0,36,52,66,156,204,232,264):hold=6
+    hold=1 if 68<=f<=83 or 124<=f<=166 else 2
+    if f in (0,36,52,66,204,232,264):hold=6
     next_boundary=min(k for k in boundaries if k>f)
     hold=min(hold,next_boundary-f,360-f)
     exposure.add(str(f),frames=hold)
@@ -163,40 +163,94 @@ def tails(c,t,fan=1,back=False):
                 hatch(c,warp_path(TAIL,warp),spacing=8,angle=65,color='#593f4844',width=.7,seed=i,jitter=.5)
 
 
-def head(c,t,view='profile',mood='alert',ear=0):
-    # Head origin is the neck junction. Shapes overlap to maintain connection.
-    if view=='profile':
-        c.path('M-35 0L-55 -24L-41 -34L-48 -55L-28 -50L-23 -100L3 -67'
-               'L28 -104L30 -59Q52 -49 62 -28L94 -15L69 1L45 10Q8 37 -35 0Z',P['coat'],P['ink'],2)
-        c.path('M-22 -87L-17 -52L-3 -62Z','#744f57',None)
-        c.path('M25 -91L13 -66L27 -61Z','#744f57',None)
-        c.path('M-35 -11Q-8 5 14 -19Q41 -40 62 -28L94 -15L69 1L45 10Q11 28 -10 15Z',P['paper'],None)
-        c.path('M4 -24Q22 -46 39 -28Q23 -13 4 -24Z',P['light'],P['ink'],1.2)
-        if mood=='sleep':c.path('M9 -25Q23 -16 34 -27',None,P['ink'],2)
+def head(c,t,view='profile',mood='alert',ear=0,turn=None):
+    """One registered skull and muzzle, from front (0) to profile (1).
+
+    The far eye, brow and whisker plane disappear together behind the muzzle;
+    a profile never retains a detached second brow. Sleep replaces the entire
+    eye drawing instead of drawing a lid over an open white eye.
+    """
+    if view not in ('front','three_quarter','profile'):
+        raise ValueError('Fox view must be front, three_quarter or profile')
+    u={'front':0.,'three_quarter':.5,'profile':1.}[view] if turn is None else max(0.,min(1.,turn))
+    def xy(front,profile):
+        return front[0]+(profile[0]-front[0])*u,front[1]+(profile[1]-front[1])*u
+    def point(front,profile):
+        x,y=xy(front,profile);return f'{x:.4f} {y:.4f}'
+    def path(commands):
+        return ''.join(command+point(front,profile) for command,front,profile in commands)
+    outline=path([
+        ('M',(-48,2),(-35,0)),('L',(-65,-23),(-55,-24)),
+        ('L',(-49,-23),(-41,-34)),('L',(-59,-58),(-48,-55)),
+        ('L',(-38,-49),(-28,-50)),('L',(-40,-105),(-23,-100)),
+        ('L',(-5,-73),(3,-67)),('L',(30,-110),(28,-104)),
+        ('L',(41,-61),(30,-59)),('Q',(61,-47),(52,-49)),
+        (' ',(53,-22),(62,-28)),('L',(65,-21),(94,-15)),
+        ('L',(44,8),(69,1)),('Q',(5,31),(45,10)),
+        (' ',(5,31),(25,20)),('Q',(-23,17),(8,37)),
+        (' ',(-48,2),(-35,0))])+'Z'
+    c.path(outline,P['coat'],P['ink'],2)
+    # Both ears retain their root/tip identity while the far ear foreshortens.
+    c.path(path([('M',(-34,-91),(-22,-87)),('L',(-27,-61),(-17,-52)),
+                 ('L',(-11,-70),(-3,-62))])+'Z','#77535a',None)
+    c.path(path([('M',(28,-96),(25,-91)),('L',(12,-75),(13,-66)),
+                 ('L',(33,-65),(27,-61))])+'Z','#77535a',None)
+    cream=path([
+        ('M',(-48,2),(-35,-11)),('L',(-47,-25),(-35,-11)),
+        ('Q',(-24,-3),(-8,5)),(' ',(-9,-13),(14,-19)),
+        ('L',(2,-3),(23,-27)),('L',(15,-18),(41,-40)),
+        ('Q',(32,-14),(53,-36)),(' ',(51,-31),(62,-28)),
+        ('L',(65,-21),(94,-15))])+'L110 55L-80 55Z'
+    with c.clip(outline):c.path(cream,P['paper'],None)
+    # The near eye is continuous; the far eye contracts into the muzzle plane.
+    eyes=[(*xy((-22,-34),(23,-28)),13+4*u,1.)]
+    far_visibility=1-ramp(.3,.65,u)
+    if far_visibility>.3:
+        eyes.append((*xy((27,-38),(43,-32)),12*far_visibility,far_visibility))
+    sleepy=mood in ('sleep','blink')
+    gaze=2-4*ramp(12.6,14.8,t) if t>12.6 else 2
+    for i,(x,y,rx,visibility) in enumerate(eyes):
+        if sleepy:
+            c.path(f'M{x-rx} {y}Q{x} {y+7} {x+rx} {y-1}',None,P['ink'],1.8)
         else:
-            c.ellipse(27,-26,3.2,6,P['ink'])
-            c.ellipse(28,-29,1.1,1.7,P['light'])
-        c.path('M83 -18L95 -15L86 -7L79 -10Z',P['ink'],None)
-        c.path('M45 -1Q61 8 76 -2M52 10l7 -1',None,P['ink'],1.2)
-        c.path('M-29 -38Q-15 -48 -2 -38M8 -46Q24 -53 37 -43',None,P['ink'],1.4)
-        c.path('M-27 -9l-21 5M-22 -3l-24 12',None,'#f0d1a1',1)
-    else:
-        c.path('M-48 2L-65 -23L-49 -23L-59 -58L-38 -49L-40 -105L-5 -73'
-               'L30 -110L41 -61L61 -47L53 -22L65 -21L44 8L5 31Z',P['coat'],P['ink'],2)
-        c.path('M-34 -91L-27 -61L-11 -70Z','#77535a',None)
-        c.path('M28 -96L12 -75L33 -65Z','#77535a',None)
-        c.path('M-48 2L-47 -25Q-24 -3 -9 -13L2 -3L15 -18Q32 -14 51 -31L44 8L5 31Z',P['paper'],None)
-        for x,y in [(-22,-34),(27,-38)]:
-            if mood=='sleep':c.path(f'M{x-11} {y}Q{x} {y+10} {x+10} {y-2}',None,P['ink'],1.8)
-            else:
-                c.path(f'M{x-13} {y-2}Q{x} {y-17} {x+11} {y-2}Q{x} {y+9} {x-13} {y-2}Z',P['light'],P['ink'],1)
-                c.ellipse(x+2+(2-4*ramp(12.6,14.8,t) if t>12.6 else 0),y-3,2.5,5,P['ink'])
-                c.ellipse(x+3,y-5,1,1.5,P['light'])
-        c.path('M-4 -3L10 -5L4 5Z',P['ink'],None)
-        c.path('M4 5Q-2 17 -11 11M4 5Q12 16 22 9',None,P['ink'],1.2)
-        c.path('M-42 -7l-25 3M-39 0l-22 12M40 -8l24 -5M38 0l23 9',None,'#edd4ad',1.1)
-        c.path('M-33 -55Q-21 -63 -9 -55M15 -60Q28 -68 40 -58',None,P['ink'],1.3)
-    c.path('M-8 -59L-3 -51L5 -61L-1 -43Z','#f1d9a9',None)
+            eye=f'M{x-rx} {y-visibility}Q{x} {y-16*visibility} {x+rx} {y-visibility}Q{x} {y+10*visibility} {x-rx} {y-visibility}Z'
+            c.path(eye,P['light'],None)
+            with c.clip(eye):
+                c.ellipse(x+gaze*visibility,y-visibility,2.8*visibility,5.5*visibility,P['ink'])
+                c.ellipse(x+gaze*visibility+1,y-3,1,1.5,P['light'])
+            c.path(eye,None,P['ink'],1.2)
+        by=y-(21-3*u)*visibility
+        c.path(f'M{x-rx} {by+1}Q{x} {by-8} {x+rx} {by+2}',None,P['ink'],1.4)
+    # The nose reaches the silhouette as the muzzle turns out. It must not
+    # remain an interior front-view symbol on an already protruding snout.
+    projection=1-(1-u)**4
+    tip_x=65+29*u;tip_y=-21+6*u
+    nx=10+(tip_x+1-10)*projection
+    ny=-5+(tip_y+5)*projection
+    nose_width=14-2*u
+    c.path(f'M{nx-nose_width} {ny+2*u}L{nx} {ny}'
+           f'L{nx-2-7*u} {ny+6+2*u}L{nx-6-10*u} {ny+10-5*u}Z',P['ink'],None)
+    c.path(path([('M',(-11,11),(45,-1)),('Q',(4,23),(61,8)),
+                 (' ',(22,9),(76,-2))]),None,P['ink'],1.2)
+    if 0<u<.98:
+        # A visible bridge joins an interior three-quarter nose to its muzzle.
+        # The true profile obtains this edge from the outer silhouette instead.
+        bx,by=xy((4,-19),(45,-30))
+        c.path(f'M{bx} {by}Q{(bx+nx-nose_width)/2} {by+3} '
+               f'{nx-nose_width} {ny+2*u}',None,'#9f745d',.9)
+    if u<.65:
+        # Philtrum starts at the projected nose, never an old front-face origin.
+        bottom_x=nx-6-10*u;bottom_y=ny+10-5*u
+        mx,my=xy((4.75,16.5),(60.25,3.25))
+        c.path(f'M{bottom_x} {bottom_y}Q{bottom_x} {my-2} {mx} {my}',None,P['ink'],1.2)
+    c.path(path([('M',(-42,-7),(-27,-9)),('L',(-67,-4),(-48,-4)),
+                 ('M',(-39,0),(-22,-3)),('L',(-61,12),(-46,9))]),None,'#edd4ad',1.1)
+    if far_visibility>.3:
+        x,y=xy((40,-8),(60,-3))
+        c.path(f'M{x} {y}l{24*far_visibility} {-5*far_visibility}'
+               f'M{x-2} {y+8}l{23*far_visibility} {9*far_visibility}',None,'#edd4ad',1.1)
+    c.path(path([('M',(-8,-59),(-2,-59)),('L',(-3,-51),(3,-51)),
+                 ('L',(5,-61),(11,-61)),('L',(-1,-43),(5,-43))])+'Z','#f1d9a9',None)
 
 
 def paw(c,x,y,angle=0):
@@ -305,7 +359,12 @@ def fox(c,t,pose='crouch',graphic=False,plant_amount=None):
                    'Q40 -12 39 -39L29 -66Z',P['coat'],P['ink'],1.8)
             paw(c,61,1)
         with c.transform(53,-150,rotation=math.sin(t*1.7)*2):
-            head(c,t,'front' if planted or pose=='catch' else 'profile',mood='sleep' if pose=='sit' and 10.7<t<12.6 else 'alert')
+            # The landing finishes in profile; only then do eyes/head turn to us.
+            # A short closed-eye exposure bridges the far eye's occlusion change.
+            turning=pose=='catch' and 6.5<=t<6.9
+            turn=1-ramp(6.5,6.9,t) if turning else 0 if planted or pose=='catch' else 1
+            mood='blink' if turning and 6.58<=t<6.76 else 'sleep' if pose=='sit' and 10.7<t<12.6 else 'alert'
+            head(c,t,mood=mood,turn=turn)
         shadow='M-83 -106Q-69 -65 -25 -58L-8 -103L-51 -134Z'
     c.path(shadow,P['shadow']+'80',None)
     hatch(c,shadow,spacing=7,angle=-38,color=P['ink']+'88',width=.7,seed=19,jitter=.8)

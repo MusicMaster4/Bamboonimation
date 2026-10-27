@@ -28,7 +28,7 @@ Para executar também os dois testes que inspecionam metadados de vídeo e áudi
 
 ## O que descrever no pull request
 
-Explique o problema e o comportamento resultante. Informe comandos de verificação, ambiente, impacto visual e custo de renderização quando relevantes. Inclua capturas ou vídeos pequenos de cenas originais; não publique frames copiados da referência.
+Explique o problema e o comportamento resultante. Informe comandos de verificação, ambiente, impacto visual e custo de renderização quando relevantes. Inclua capturas ou vídeos pequenos de cenas originais; não publique frames copiados de terceiros.
 
 ## Convenções
 

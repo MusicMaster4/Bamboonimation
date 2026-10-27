@@ -25,11 +25,9 @@ O motor não exige uma GPU dedicada. Isso não significa custo zero de CPU, RAM 
 
 ## Direção artística
 
-A referência indicada para o projeto é [CEREAL! — Animated Student Film](https://www.youtube.com/watch?v=nCKwUB8EVbc), de XrayAlphaCharlie. Seus contornos irregulares, cores suaves, cenários com profundidade e atuação expressiva orientam o tipo de autoria que o framework procura facilitar.
+O framework facilita a autoria de contornos irregulares, cores suaves, cenários com profundidade e atuação expressiva. A aparência de cada animação depende dos desenhos, poses, encenação e acabamento de seus autores.
 
-O [estudo integral da referência](docs/reference-study.md) registra a revisão dos 2.035 frames decodificados. Oito rodadas de chá e revisões dos outros curtas corrigiram contatos, deformação, enquadramento e montagem. Os quatro vídeos de demonstração têm 15 segundos e foram decodificados integralmente. A revisão final aprovou os gestos examinados segundo critérios de apoio, peso, contato, atuação e consistência da linguagem de cartoon estudada. A [validação](docs/validation.md) registra as evidências, os custos e o alcance dessa conclusão.
-
-A aparência de um filme vem dos desenhos, poses, encenação e acabamento. A biblioteca fornece meios para construí-los; instalar o pacote não transforma automaticamente qualquer desenho em um curta com a mesma qualidade. Consulte a [avaliação visual dos exemplos](docs/validation.md) para saber o que foi observado e o que permanece diferente da referência. O filme, seus personagens e seu áudio não são distribuídos com este projeto.
+Os quatro vídeos de demonstração têm 15 segundos. A [validação](docs/validation.md) identifica os arquivos, os defeitos encontrados, as correções e o alcance das revisões; teste técnico e decodificação não comprovam qualidade artística.
 
 ## Instalação
 
@@ -328,7 +326,7 @@ tests/                Verificações de comportamento e integração
 docs/                 API, agentes, arquitetura, prática e validação
 .github/              Integração contínua e modelos de colaboração
 LICENSE               Texto oficial PolyForm Noncommercial 1.0.0
-NOTICE                Avisos do projeto e da referência visual
+NOTICE                Avisos do projeto
 ```
 
 ## Desenvolvimento e contribuição
@@ -346,8 +344,6 @@ Leia [CONTRIBUTING.md](CONTRIBUTING.md) para o fluxo completo e [CONTRIBUTOR_AGR
 A [PolyForm Noncommercial 1.0.0](LICENSE) permite os propósitos definidos em seu texto, incluindo usos não comerciais e determinadas categorias de uso pessoal e institucional. Ela não autoriza uso comercial do software ou de um fork. Não venda o aplicativo, ofereça sua operação como serviço comercial ou presuma permissão para usá-lo em produção comercial sem outra autorização dos titulares.
 
 Você não transfere automaticamente ao projeto os direitos sobre desenhos, roteiros ou renders originais que criar. Isso também não concede uma exceção à restrição de uso comercial do software. Confira ainda os direitos sobre assets, fontes e áudio que você fornecer. Este resumo não altera o texto da licença.
-
-O projeto não reivindica propriedade nem licença sobre a obra usada como referência. Nenhuma afiliação com seus autores é sugerida.
 
 ---
 

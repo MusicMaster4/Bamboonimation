@@ -1,74 +1,182 @@
 {
-  "reference": {
-    "title": "CEREAL!",
-    "url": "https://www.youtube.com/watch?v=nCKwUB8EVbc",
-    "frames_decoded": 2035,
-    "fps": 24,
-    "sequential_contact_sheets": 85,
-    "thumbnail_resolution": [
-      320,
-      180
-    ],
-    "temporal_subsampling": false,
-    "reviewers": "Five AI agents; selected native720p details; not human certification"
-  },
-  "tea_rounds": 8,
-  "final_review": {
-    "file": "tea_for_two.mp4",
-    "sha256": "66e8791de566da2489e57127f47f819af39cc62172a01291964deec63d817078",
-    "reviewed_frames": 360,
-    "frame_order": "consecutive",
-    "native_frame_details": [
-      33,
-      44,
-      70,
-      118,
-      121,
-      126,
-      130,
-      134,
-      139,
-      143,
-      147,
-      149,
-      154,
-      160,
-      180,
-      184,
-      240
-    ],
-    "reviewers": "Root plus two AI agents; motor author reviewed integration; another agent independently reviewed film. Root verified Chrome1x start/end; no perceptual audio listening claim.",
-    "criteria": {
-      "anticipation_and_counterpose": "pass",
-      "fixed_support_and_weight": "pass",
-      "authored_clothing_volume": "pass",
-      "identity_and_connected_silhouettes": "pass",
-      "grip_release_and_occlusion": "pass",
-      "staggered_recovery": "pass",
-      "motivated_staging_and_consistent_finish": "pass",
-      "complete_decoding_and_1x_playback": "pass"
+  "revision": "after_user_visual_feedback",
+  "status": "specific_reported_anatomy_and_contact_defects_closed_in_identified_artifacts",
+  "earlier_broad_visual_approval_superseded": true,
+  "review_findings": [
+    {
+      "file": "tea_for_two.mp4",
+      "sha256": "47dc24a2eff270f3cb42554c6dfdf8dc259f80774956c77b1c6fcd30c1fe570b",
+      "bytes": 4555699,
+      "frames_decoded": 360,
+      "independent_native_hand_review": {
+        "crop_count": 317,
+        "frame_ranges": [
+          [
+            0,
+            71
+          ],
+          [
+            115,
+            359
+          ]
+        ],
+        "resized": false,
+        "temporal_omissions_within_ranges": false
+      },
+      "reaction_without_human_hand": {
+        "frame_range": [
+          72,
+          114
+        ],
+        "visually_reviewed": true
+      },
+      "face_model_review_retained_from_previous_candidate": {
+        "native_crops": 251,
+        "frame_ranges": [
+          [
+            0,
+            41
+          ],
+          [
+            115,
+            167
+          ],
+          [
+            204,
+            359
+          ]
+        ],
+        "head_model_unchanged_in_final_candidate": true,
+        "orientation_expression_and_far_eye_occlusion_atlases_reviewed": true
+      },
+      "closed_defects": [
+        "Conflicting internal and contour nose directions",
+        "Uncoordinated head replacements and distant eye/brow visibility",
+        "Grasp drawn on cup wall with handle facing away",
+        "Hand returning to handle at frame 197 after release",
+        "Possible duplicate arm/hand in frame 116 deformation"
+      ],
+      "observed_final_behavior": "One connected custom wrist/palm/finger drawing follows the actor-facing handle, opens and withdraws toward the chest, then recloses without returning to the cup.",
+      "scope": "No new material anatomy/contact defect found in the stated coverage; no automatic quality guarantee for arbitrary scenes."
     },
-    "resolved_final_defect": "Proximal sleeve cap stays under exact coat boundary in foreground pass; decoded native44/149/180 rechecked.",
-    "scope": "Comparable cartoon language and consistency in the reviewed original action. New scenes still require artistic authorship and visual review."
-  },
-  "other_previews": [
     {
       "file": "the_last_cookie.mp4",
-      "sha256": "b6247e8af67d39c872c7f41dd6fdead7bc3eac302c222e3bb32f92895637203a",
-      "all_frames_reviewed": 360,
-      "same_bytes_as_prior_reviewed_export": true
+      "sha256": "a7ab9ab3cd064905adf7b5a0cdbb4340ab0af016df0b36e1993cef5aca4cf7ee",
+      "bytes": 3962665,
+      "frames_decoded": 360,
+      "author_review": {
+        "all_final_frames_as_consecutive_thumbnails": 360,
+        "native_source_interval": [
+          216,
+          296
+        ],
+        "selected_native_decoded_frames": [
+          174,
+          180,
+          218,
+          223,
+          224,
+          234,
+          244,
+          260,
+          264,
+          268,
+          282,
+          296,
+          302
+        ]
+      },
+      "independent_final_review": {
+        "native_crop_count": 81,
+        "frame_range": [
+          216,
+          296
+        ],
+        "resized": false,
+        "temporal_omissions": false,
+        "native_v3_v4_comparisons": [
+          223,
+          224
+        ]
+      },
+      "closed_defects": [
+        "Free catch hand tangent to head, resembling another ear",
+        "Foreground sleeve cap crossing the torso",
+        "Offer directed toward rabbit eye",
+        "Pointed sleeve root in V3 frames 223-224"
+      ],
+      "review_error_disclosed": "The independent V3 note initially accepted the protruding sleeve contour. That conclusion was withdrawn; V3 required correction. The final V4 native comparison verifies the corrected root.",
+      "observed_final_behavior": "The free hand is separated from the head, the crossing sleeve remains connected, and the offered half-cookie approaches the lower muzzle below both eyes before withdrawal.",
+      "scope": "Author reviewed the final film; independent final native review covers 216-296 and is not relabeled as a new native review of all 360 frames."
+    },
+    {
+      "file": "paper_moon.mp4",
+      "sha256": "3c9040a528fae08b5145ecca869d3f2e1fc65755e9bd5e40ac6975b95f90a018",
+      "bytes": 2304220,
+      "frames_decoded": 360,
+      "author_review": {
+        "all_final_frames_as_consecutive_thumbnails": 360,
+        "pose_and_head_atlases_reviewed": true,
+        "selected_native_decoded_details": true
+      },
+      "independent_native_face_review": {
+        "crop_count": 204,
+        "frame_range": [
+          156,
+          359
+        ],
+        "resized": false,
+        "temporal_omissions": false
+      },
+      "closed_defects": [
+        "Profile with two eyebrows and one visible eye",
+        "Open eye white underneath sleeping lid",
+        "Abrupt profile-to-front nose/muzzle replacement"
+      ],
+      "observed_final_behavior": "Far eye and eyebrow emerge together during turn 156-166; sleep 257-302 has closed lids without residual whites and eyes reopen at 303. One muzzle/nose remains connected to ears and neck.",
+      "scope": "Changed head/turn/sleep details were independently reviewed; independent final native coverage is not a fresh review of body/action frames 0-155."
     },
     {
       "file": "versatility.mp4",
       "sha256": "05f3b0c1eaf61a606a69e51ee9c55a9db80873a0bb43e4996afb13127206ed0a",
-      "all_frames_reviewed": 360,
-      "same_bytes_as_prior_reviewed_export": true
-    },
-    {
-      "file": "paper_moon.mp4",
-      "sha256": "2ee6c81539e1841d39d16afe23392a153a5f75d81491155c06d1786f0f34cc64",
-      "all_frames_reviewed": 360,
-      "same_bytes_as_prior_reviewed_export": true
+      "bytes": 3435929,
+      "frames_decoded": 360,
+      "same_bytes_as_previously_reviewed_export": true,
+      "prior_consecutive_thumbnail_review_frames": 360,
+      "scope": "Unchanged artifact retains its prior review; no new artistic review is claimed in this correction round."
     }
-  ]
+  ],
+  "technical_media_verification": {
+    "report": "media.json",
+    "all_frames_decoded": 1440,
+    "per_file_frames": 360,
+    "duration_seconds": 15,
+    "resolution": [
+      1280,
+      720
+    ],
+    "fps": 24,
+    "video_codec": "h264",
+    "narrative_audio": "AAC mono 48000 Hz",
+    "versatility_intentionally_silent": true
+  },
+  "playback_verification": {
+    "report": "playback.json",
+    "browser": "Chrome",
+    "playback_rate": 1,
+    "observed_start_and_end": true,
+    "end_time_seconds": 15,
+    "media_error": null,
+    "repeated_for_three_changed_files": true,
+    "unchanged_versatility_retains_prior_verification": true,
+    "continuous_human_viewing_claim": false,
+    "perceptual_listening_claim": false
+  },
+  "limitations": [
+    "Reviews are by AI agents; some reviewers authored the fixes and other agents checked the stated details. This is not external professional or human certification.",
+    "Closing documented defects does not establish that every frame is artistically flawless or that new scenes will have the same quality.",
+    "Technical tests, hashes, decoding and playback completion do not certify artistic quality or perceptual audio synchronization.",
+    "New subjects and scenes still require authored drawings, contact staging and visual review."
+  ],
+  "detailed_review_derivatives_publicly_distributed": false
 }

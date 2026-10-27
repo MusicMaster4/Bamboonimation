@@ -19,7 +19,7 @@ actor.draw(c, x=560, y=670, t=t, scale=1.2,
 `look=(dx,dy)` desloca as pupilas, com limites para preservar o desenho. O piscar padrão é calculado a partir de `t`; `blink=True` ou `False` permite controlar o fechamento. Expressões frontais disponíveis: `content`, `curious`, `surprise`, `delighted`, `worried`, `sleepy` e `shout`. `shout` remodela a mandíbula com `LatticeWarp` e usa uma boca própria; `worried` inclui assimetria de pálpebra/sobrancelha. Nem todo nome produz uma mudança distinta em toda a anatomia. `blink` fecha os dois olhos juntos; não é um controle independente de cada olho.
 
 Poses prontas: `idle`, `offer`, `surprise`, `think`, `celebrate` e `sneak`. Os nomes de expressão e de pose são canais distintos.
-`view="profile"` seleciona outra silhueta de cabeça; `view="front"` é o padrão. O corpo é compartilhado entre as vistas. O perfil tem desenho próprio de nariz, cabelo, orelha e olho; a boca muda para `surprise`/`shout`, mas não replica todas as variações faciais frontais. `facing=-1` espelha a vista escolhida. Para uma virada convincente, desenhe poses intermediárias e ajuste também tronco, membros e contatos; trocar a cabeça diretamente pode produzir um salto visual.
+`view=0.0` a `view=1.0` controla uma virada contínua de frente para perfil; `"front"`, `"three_quarter"` e `"profile"` são atalhos para 0, 0,55 e 1. O modelo usa um único nariz registrado e move crânio, orelha, franja, olhos e boca de forma coordenada. O olho e a sobrancelha distantes seguem a mesma oclusão, e os detalhes são limitados pelo contorno do rosto. `FacePose` funciona durante toda a virada. Por exemplo, `view=smooth(1, 1.8, t)` faz a cabeça virar em 0,8 s. `facing=-1` espelha o resultado. Coordene também olhar, tronco e ombros para dar intenção à virada; não troque vistas instantaneamente por conveniência. Subclasses que implementam os métodos `head`, `profile` ou `three_quarter` continuam responsáveis por desenhar seus próprios intermediários.
 
 Para trocar o design, crie sua função de desenho ou uma subclasse com outra implementação de `head`/`draw`. As cores do construtor oferecem uma variação rápida do desenho existente; para um novo personagem, revise também mãos, proporções e detalhes de roupa. `Actor` não transforma uma imagem arbitrária em um personagem articulado.
 
@@ -97,7 +97,7 @@ scene = Scene(duration=4, background="#f2e4cb", painter=draw)
 
 Passe o **mesmo `body` e os mesmos parâmetros de colocação** para `pose_for_hand`, `draw`, `hand_anchor` e `draw_arm`. O alvo e o anchor ficam no espaço do pai do ator; excluem câmera e escala da exportação. Para uma rotação externa em torno de `(x,y)`, `pose_for_hand(..., rotation=graus)` inverte essa rotação; desenhe sob a transformação correspondente. `hand_anchor` não inclui essa rotação externa: componha-a ao converter o resultado para o espaço que contém o prop.
 
-`front_hands=("right",)` põe esse braço/mão à frente do corpo; `hand_shapes` aceita `fist` ou `open` por lado. Se uma mesa ou outro primeiro plano for desenhado depois do ator, use `draw_arm` após esse elemento, com os mesmos `pose`, `body`, `shoulder_turn` e argumentos de colocação, e então desenhe o prop e os dedos anteriores. Com `body` ativo, `draw_arm(..., occlude_root=True)` mantém a raiz da manga atrás do limite do casaco, preservando a mão e o trecho do braço que deve passar sobre o prop. Use essa opção no redesenho de braços sobre mesas/objetos; o padrão `False` permite gestos intencionais à frente do tronco. A mão não é apagada pelo recorte da raiz. `shadow=False` remove apenas a sombra automática do ator, permitindo uma sombra própria fixa no chão durante um salto.
+`front_hands=("right",)` põe esse braço/mão à frente do corpo; `hand_shapes` aceita `fist`, `open` ou `none` por lado; `none` deixa o desenho da mão a cargo da cena. Se uma mesa ou outro primeiro plano for desenhado depois do ator, use `draw_arm` após esse elemento, com os mesmos `pose`, `body`, `shoulder_turn` e argumentos de colocação, e então desenhe o prop e os dedos anteriores. `draw_arm(..., occlude_root=True)` mantém a raiz da manga atrás do limite do casaco, preservando a mão e o trecho do braço que deve passar sobre o prop. Use essa opção no redesenho de braços sobre mesas/objetos; o padrão `False` permite gestos intencionais à frente do tronco. A mão não é apagada pelo recorte da raiz. `shadow=False` remove apenas a sombra automática do ator, permitindo uma sombra própria fixa no chão durante um salto.
 
 De outro diretório, informe os caminhos absolutos da cena e da saída. Por exemplo, partindo da pasta do projeto em PowerShell:
 
@@ -193,7 +193,7 @@ python -m bamboonimation render examples/quickstart.py -o renders/quickstart.mp4
 Assista à ação antes de aumentar a resolução. Troque um elemento por vez para aprender como os controles alteram a leitura da cena.
 ## Atuação em três quartos e mãos registradas
 
-`Actor.draw(..., view="three_quarter", face=FacePose(...), shoulder_turn=...)` usa um desenho próprio de cabelo, orelha, nariz, bochecha e planos dos olhos. `FacePose` controla cada pálpebra e sobrancelha, além de bochecha e mandíbula. `shoulder_turn`, entre -1 e 1, muda a silhueta do casaco e a origem dos braços. Assim, olhos, cabeça e ombros podem preparar e concluir o gesto em momentos diferentes. Os controles de `FacePose` atuam nessa vista de três quartos; frente e perfil conservam seus desenhos próprios.
+`Actor.draw(..., view="three_quarter", face=FacePose(...), shoulder_turn=...)` usa um desenho próprio de cabelo, orelha, nariz, bochecha e planos dos olhos. `FacePose` controla cada pálpebra e sobrancelha, além de bochecha e mandíbula. `shoulder_turn`, entre -1 e 1, muda a silhueta do casaco e a origem dos braços. Assim, olhos, cabeça e ombros podem preparar e concluir o gesto em momentos diferentes. Os controles de `FacePose` acompanham também a virada contínua de frente para perfil, mantendo o mesmo modelo.
 
 Para alinhar uma palma a um objeto, `pose_for_hand` devolve uma nova `Pose`. O alvo usa coordenadas do espaço pai do ator, antes da câmera e da escala de exportação. A função considera lean, crouch, respiração, caminhada, facing e squash; o argumento `rotation` inclui uma rotação externa do Canvas ao redor do ator. Ela resolve posição: orientação do punho, dedos, alcance anatômico e intenção da pose continuam decisões de autoria.
 
@@ -202,7 +202,8 @@ Este exemplo mantém o contato ao variar squash e contragirar os ombros:
 ```python
 import math
 from bamboonimation import Scene
-from bamboonimation.cartoon import Actor, FacePose, room, table, cup, cup_fingers
+from bamboonimation.cartoon import (Actor, FacePose, room, table, cup,
+                                    cup_handle_anchor, cup_handle_grip)
 
 actor = Actor()
 
@@ -211,19 +212,26 @@ def paint_contact(c, t):
     room(c)
     squash = 1 + .025 * math.sin(t * 2)
     placement = dict(x=535, y=670, t=t, scale=1.15, squash=squash)
-    pose = actor.pose_for_hand("right", (682, 508), pose="offer", **placement)
+    wrist = cup_handle_anchor(715, 530, handle_side=-1)
+    pose = actor.pose_for_hand("right", wrist, pose="offer", **placement)
     turn = -.4 * math.sin(t)
     actor.draw(c, pose=pose, view="three_quarter", shoulder_turn=turn,
-               face=FacePose(eye_open=(.65, 1), brow_offset=(2, -2), cheek=3),
+               hand_shapes={"right": "none"}, face=FacePose(eye_open=(.65, 1), brow_offset=(2, -2), cheek=3),
                look=(3, 4), **placement)
     table(c)
     # A mesa encobre o corpo, mas o antebraço passa acima dela.
-    actor.draw_arm(c, "right", pose=pose, shoulder_turn=turn, **placement)
-    cup(c, 715, 530)
-    cup_fingers(c, 715, 530)
+    actor.draw_arm(c, "right", pose=pose, shoulder_turn=turn, shape="none", **placement)
+    cup(c, 715, 530, handle_side=-1)
+    cup_handle_grip(c, 715, 530, handle_side=-1, skin=actor.skin)
 
 
 scene = Scene(duration=10, painter=paint_contact)
 ```
 
 Use os mesmos argumentos de colocação no ator, no solver e em `draw_arm`. O solver não limita alvos distantes ao alcance do braço: reveja a silhueta e mova o corpo quando necessário. Para outros personagens, o grafo fornece `Node.world_point` e `Node.local_point`, e `DrawingBank.anchor` registra pontos em desenhos substitutos; a matemática não depende do modelo Mira.
+
+## Contato com a alça e mãos personalizadas
+
+O exemplo de chá orienta a alça para o personagem: `cup(c, x, y, handle_side=-1)`. `cup_handle_anchor(x, y, rotation, scale, handle_side=-1)` devolve o contato do punho correspondente ao desenho `cup_handle_grip`. Resolva o braço com `pose_for_hand`, desenhe a xícara e então a mão registrada. `closure=0..1` abre/fecha os dedos, e `skin` preserva a cor do personagem. Rotação, escala e lado precisam coincidir entre objeto, anchor e mão.
+
+Use `hand_shapes={"right": "none"}` em `Actor.draw` e `shape="none"` em `draw_arm` para suprimir a mão genérica quando seu desenho de contato já inclui punho, palma e dedos. Isso permite também criar mãos para qualquer outro objeto. Evite sobrepor uma segunda palma ou dedos soltos. Mantenha o mesmo desenho ao retirar a mão: trocar de repente pelo punho genérico pode fazê-la saltar de volta para o objeto. Uma coincidência numérica de anchors não substitui revisar o contorno e a ordem de oclusão em tamanho nativo.

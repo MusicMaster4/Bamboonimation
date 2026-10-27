@@ -2,7 +2,7 @@
 
 Source and sheets remain under renders/ (gitignored). This does not redistribute
 reference artwork or infer drawing exposure from compressed pixel equality.
-Usage: python tools/analyze_reference.py renders/reference/cereal.mp4
+Usage: python tools/analyze_reference.py renders/reference/video.mp4
 """
 from pathlib import Path
 import argparse

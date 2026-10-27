@@ -49,7 +49,7 @@ A tabela é um ponto de partida, não um molde para toda história.
 - Separe desenho e cálculo de pose em funções pequenas com nomes claros.
 - Use constantes para paleta e marcos de tempo.
 - Não chame APIs, não baixe assets e não leia arquivos repetidamente por frame.
-- Use paths, SVGs, imagens e sprites autorizados; não copie personagens ou frames da referência.
+- Use paths, SVGs, imagens e sprites autorizados; não copie personagens ou frames de terceiros.
 - Faça variação aleatória com seed e confira seus limites em valores extremos.
 - Resolva assets a partir de `__file__`, não do diretório de onde a CLI foi chamada.
 - Não entregue um arquivo de vídeo inexistente ou um link que não foi verificado.

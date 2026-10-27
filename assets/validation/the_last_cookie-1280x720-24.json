@@ -1,8 +1,8 @@
 {
   "scene": "the_last_cookie.py",
-  "output_sha256": "b6247e8af67d39c872c7f41dd6fdead7bc3eac302c222e3bb32f92895637203a",
-  "scene_sha256": "aa399a23738623c737aa0fa9490f9ccf80678acb231780b94eff70cdf2145563",
-  "engine_sha256": "d8bd7fc3a6ef3d210bea304b6b0b4a0937eb6b3f5e4e024a0abf775f5ea8fb25",
+  "output_sha256": "a7ab9ab3cd064905adf7b5a0cdbb4340ab0af016df0b36e1993cef5aca4cf7ee",
+  "scene_sha256": "e19002d923e7a82011fd330e7648bd6b5043b1e39ef16ccf6bc5b309ebc2d8ee",
+  "engine_sha256": "6e95f4ca4cdec080562a48a3be27e48e0e16d260034b73ccca3a76d812e07b61",
   "audio_assets_sha256": {
     "paper_moon.wav": "9078c8d34be311bbc055a2313c5424d183d8d9ada63a0b9636bf5b1ee75c233a",
     "tea_for_two.wav": "21ba5f5b013b1e3c5d0116667d6efe101523418c2b7e24baeda88d271e331b46",
@@ -10,8 +10,8 @@
   },
   "input_snapshot_stable_during_render": true,
   "input_snapshot_after_render": {
-    "scene_sha256": "aa399a23738623c737aa0fa9490f9ccf80678acb231780b94eff70cdf2145563",
-    "engine_sha256": "d8bd7fc3a6ef3d210bea304b6b0b4a0937eb6b3f5e4e024a0abf775f5ea8fb25",
+    "scene_sha256": "e19002d923e7a82011fd330e7648bd6b5043b1e39ef16ccf6bc5b309ebc2d8ee",
+    "engine_sha256": "6e95f4ca4cdec080562a48a3be27e48e0e16d260034b73ccca3a76d812e07b61",
     "audio_assets_sha256": {
       "paper_moon.wav": "9078c8d34be311bbc055a2313c5424d183d8d9ada63a0b9636bf5b1ee75c233a",
       "tea_for_two.wav": "21ba5f5b013b1e3c5d0116667d6efe101523418c2b7e24baeda88d271e331b46",
@@ -39,10 +39,10 @@
     "start": 0.0,
     "end": 15.0,
     "duration": 15.0,
-    "elapsed_seconds": 16.430921899998793,
-    "frames_per_second": 21.90990877998309,
-    "realtime_factor": 0.9129128658326288,
-    "bytes": 3943401,
+    "elapsed_seconds": 20.089394099999936,
+    "frames_per_second": 17.919903318537674,
+    "realtime_factor": 0.7466626382724031,
+    "bytes": 3962665,
     "supersample": 1,
     "transparent": false,
     "threads": 2,
@@ -50,11 +50,11 @@
     "encoder_preset": "fast",
     "encoder_crf": 18
   },
-  "process_wall_seconds": 16.836,
-  "peak_summed_rss_mib": 272.67,
-  "sampled_cpu_seconds": 23.328,
-  "average_cpu_cores": 1.386,
+  "process_wall_seconds": 20.552,
+  "peak_summed_rss_mib": 272.77,
+  "sampled_cpu_seconds": 28.609,
+  "average_cpu_cores": 1.392,
   "sampling_interval_seconds": 0.05,
-  "samples": 260,
+  "samples": 312,
   "method": "One child Python process plus its FFmpeg descendants; observer process excluded. RSS summed at observations, shared pages may be counted twice; transient peaks may be missed. CPU is the sum of last observed cumulative user+system times per process identity, so exited/brief processes and work after their last observation may be missed. Average CPU cores is sampled CPU seconds divided by child wall time, not machine CPU percent. Includes import/startup; nominal50ms interval plus observation overhead. No network or generative inference."
 }

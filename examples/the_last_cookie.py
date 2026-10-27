@@ -4,10 +4,11 @@ from pathlib import Path
 from bamboonimation import Scene, Storyboard, AudioClip, ExposureSheet
 from bamboonimation.cartoon import grain
 from bamboonimation.cartoon import (Actor,Rabbit,Pose,POSES,blend_pose,room,table,
-                                     cookie,cookie_fingers,cue,smooth,accents,INK)
+                                     cookie,cookie_fingers,hand,cue,smooth,accents,INK)
 
 mira=Actor(shirt='#9c788b',hair='#4a464f')
 pip=Rabbit()
+OFFER_STEP=200
 exposures=ExposureSheet()
 f=0
 while f<360:
@@ -23,14 +24,16 @@ def actor_state(a):
     jump=cue(a,(0,0),(5.9,0),(6.15,9),(6.55,-67),(7,-35),(7.5,0),(12,0))
     catch=smooth(5.7,6.1,a)*(1-smooth(7.7,8.8,a))
     p=blend_pose(POSES['think'],Pose(left=(-57,-145),right=(176,-113),tilt=9,lean=12),progress)
-    p=blend_pose(p,Pose(left=(46,-235),right=(114,-231),tilt=-12,lean=24),catch)
+    # Keep the unused hand outside the head silhouette, with a visible elbow.
+    p=blend_pose(p,Pose(left=(-97,-209),right=(114,-231),tilt=-12,lean=24),catch)
     p=blend_pose(p,Pose(left=(-61,-140),right=(234,-132),tilt=-5,lean=4),smooth(8.5,9.7,a))
     # Both hands meet the biscuit before a piece is broken off and offered.
     share=smooth(9.05,9.8,a)
     reach=smooth(9.8,10.95,a)
     # Step toward Pip while offering; shorten the local reach as the body moves.
-    lp=(244+104*reach-120/1.15*reach,-132-8*reach)
-    p=Pose(left=p.left,right=(p.right[0]-120/1.15*reach,p.right[1]),tilt=p.tilt,lean=p.lean,crouch=p.crouch)
+    # The half-cookie approaches the lower muzzle, below both eyes.
+    lp=(244+104*reach-OFFER_STEP/1.15*reach,-132+19*reach)
+    p=Pose(left=p.left,right=(p.right[0]-OFFER_STEP/1.15*reach,p.right[1]),tilt=p.tilt,lean=p.lean,crouch=p.crouch)
     p=blend_pose(p,Pose(left=lp,right=p.right,tilt=p.tilt,lean=p.lean),share)
     p=blend_pose(p,Pose(left=(-61,-140),right=p.right,tilt=p.tilt,lean=p.lean),smooth(11.65,12.3,a))
     sq=cue(a,(0,1),(5.8,1),(6.1,.94),(6.6,1.05),(7.5,.95),(7.9,1),(12,1))
@@ -49,7 +52,7 @@ def rabbit_anchor(a):
     return x-31*1.12/sq,y-20*1.12*sq
 
 
-def actor_x(a):return 485+120*smooth(9.8,10.95,a)
+def actor_x(a):return 485+OFFER_STEP*smooth(9.8,10.95,a)
 
 def actor_walk(a):return math.tau*smooth(9.8,10.95,a)
 
@@ -68,6 +71,40 @@ def biscuit_part(c,x,y,rotation,part='whole',scale=.85):
             c.path('M0 -25L-2 -16L2 -8L-2 1L1 10L-1 19L0 27',None,INK,1.6)
 
 
+
+def offering_arm(c,p,a,jump,squash):
+    """A crossing sleeve has open side contours at the authored shoulder root.
+
+    A shoulder mask is appropriate for a sleeve behind the coat, but it would
+    cut this sleeve where it crosses the bib. Bury the root in the near shoulder
+    and ink the two sides without a capped joint across the chest.
+    """
+    shoulder=(-36,-182)
+    target=p.left
+    elbow=((shoulder[0]+target[0])*.52-17,(shoulder[1]+target[1])*.5+19)
+    def normal(a,b):
+        dx,dy=b[0]-a[0],b[1]-a[1];length=math.hypot(dx,dy)
+        return (-dy/length,dx/length)
+    n0=normal(shoulder,elbow);n1=normal(elbow,target)
+    # These attachment points stay buried inside the near coat shoulder.
+    # Rotating a cross-section normal here used to poke a corner outside the
+    # shoulder when the hand passed close to the chest during preparation.
+    top=(-38,-190)
+    bottom=(-43,-173)
+    tip_top=(target[0]-n1[0]*10,target[1]-n1[1]*10)
+    tip_bottom=(target[0]+n1[0]*10,target[1]+n1[1]*10)
+    upper=f'M {top[0]} {top[1]} Q {elbow[0]-n0[0]*12} {elbow[1]-n0[1]*12} {tip_top[0]} {tip_top[1]}'
+    lower=f'M {bottom[0]} {bottom[1]} Q {elbow[0]+n0[0]*12} {elbow[1]+n0[1]*12} {tip_bottom[0]} {tip_bottom[1]}'
+    fill=upper+f' L {tip_bottom[0]} {tip_bottom[1]} Q {elbow[0]+n0[0]*12} {elbow[1]+n0[1]*12} {bottom[0]} {bottom[1]} Z'
+    bob=math.sin(a*2.4)*1.2+abs(math.sin(actor_walk(a)))*4
+    with c.transform(actor_x(a),670+jump,sx=1.15/squash,sy=1.15*squash):
+        with c.transform(p.lean,p.crouch+bob,rotation=-p.lean*.15):
+            c.path(fill,mira.shirt,None)
+            c.path(upper,None,INK,1.8);c.path(lower,None,INK,1.8)
+            c.path(f'M {tip_top[0]} {tip_top[1]} L {tip_bottom[0]} {tip_bottom[1]}',None,INK,1.3)
+            hand(c,*target,angle=-12)
+
+
 def paint(c,t):
     a=exposures.time(t)
     z=cue(t,(0,1.05),(2,1.05),(3.2,1.16),(8,1.16),(10.2,1.04),(12,1.04))
@@ -80,7 +117,7 @@ def paint(c,t):
         expression='curious' if a<3 else 'surprise' if a<7.7 else 'delighted' if a<12.4 else 'content'
         mira.draw(c,actor_x(a),670+jump,a,scale=1.15,pose=p,walk=actor_walk(a),expression=expression,look=(4,-2),blink=(12.5<a<12.7),
                   squash=actor_squash,knee_bend=cue(a,(0,0),(5.8,0),(6.1,20),(6.6,-9),(7.5,18),(7.9,0)),
-                  hand_shapes={'right':'open'} if 5.7<a<6.75 else {},front_hands=('left',) if a>9.05 else ())
+                  hand_shapes={'right':'open'} if 5.7<a<6.75 else {},front_hands=())
         table(c)
         # Empty plate and crumbs ground the prop in the set.
         c.ellipse(732,546,65,12,'#d0b795',INK,1.8)
@@ -91,9 +128,9 @@ def paint(c,t):
         pip.draw(c,rx,ry,a,scale=1.12,look=(-2,-1),squash=squash,
                  expression='laugh' if 11.15<a<11.65 or 11.8<a<12.9 else 'sleepy' if a>13 else 'content')
         if a>=6.75:
-            mira.draw_arm(c,'right',actor_x(a),670+jump,a,scale=1.15,pose=p,squash=actor_squash,walk=actor_walk(a))
+            mira.draw_arm(c,'right',actor_x(a),670+jump,a,scale=1.15,pose=p,squash=actor_squash,walk=actor_walk(a),occlude_root=True)
         if a>9.05:
-            mira.draw_arm(c,'left',actor_x(a),670+jump,a,scale=1.15,pose=p,squash=actor_squash,walk=actor_walk(a))
+            offering_arm(c,p,a,jump,actor_squash)
         # Plate contact precedes the snatch; the held biscuit shares the paw clock.
         if a<3.05:
             cx,cy=732,524;rot=-14
