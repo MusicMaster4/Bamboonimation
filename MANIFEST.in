@@ -1,0 +1,7 @@
+include LICENSE NOTICE README.md CONTRIBUTING.md CONTRIBUTOR_AGREEMENT.md CODE_OF_CONDUCT.md SECURITY.md
+recursive-include docs *.md
+recursive-include examples *.py
+recursive-include tools *.py
+recursive-include assets/audio *.wav
+recursive-include assets/gallery *.png *.jpg *.mp4
+recursive-include assets/validation *.json

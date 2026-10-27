@@ -1,0 +1,54 @@
+[
+  {
+    "file": "tea_for_two.mp4",
+    "sha256": "66e8791de566da2489e57127f47f819af39cc62172a01291964deec63d817078",
+    "browser": "Chrome",
+    "playback_rate": 1,
+    "duration": 15,
+    "ended": true,
+    "current_time_at_end": 15,
+    "media_error": null,
+    "observed_start_and_end": true,
+    "continuous_human_viewing_claim": false,
+    "perceptual_listening_claim": false
+  },
+  {
+    "file": "the_last_cookie.mp4",
+    "sha256": "b6247e8af67d39c872c7f41dd6fdead7bc3eac302c222e3bb32f92895637203a",
+    "browser": "Chrome",
+    "playback_rate": 1,
+    "duration": 15,
+    "ended": true,
+    "current_time_at_end": 15,
+    "media_error": null,
+    "observed_start_and_end": true,
+    "continuous_human_viewing_claim": false,
+    "perceptual_listening_claim": false
+  },
+  {
+    "file": "versatility.mp4",
+    "sha256": "05f3b0c1eaf61a606a69e51ee9c55a9db80873a0bb43e4996afb13127206ed0a",
+    "browser": "Chrome",
+    "playback_rate": 1,
+    "duration": 15,
+    "ended": true,
+    "current_time_at_end": 15,
+    "media_error": null,
+    "observed_start_and_end": true,
+    "continuous_human_viewing_claim": false,
+    "perceptual_listening_claim": false
+  },
+  {
+    "file": "paper_moon.mp4",
+    "sha256": "2ee6c81539e1841d39d16afe23392a153a5f75d81491155c06d1786f0f34cc64",
+    "browser": "Chrome",
+    "playback_rate": 1,
+    "duration": 15,
+    "ended": true,
+    "current_time_at_end": 15,
+    "media_error": null,
+    "observed_start_and_end": true,
+    "continuous_human_viewing_claim": false,
+    "perceptual_listening_claim": false
+  }
+]

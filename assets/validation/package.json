@@ -1,0 +1,27 @@
+{
+  "python": "3.12.10",
+  "installed_distribution": "bamboonimation-0.1.0 wheel",
+  "source_is_installed_wheel": true,
+  "doctor_all_encoders": true,
+  "portrait_png": [
+    1080,
+    1920
+  ],
+  "rational_fps_smoke": "30000/1001",
+  "WarpCanvas_rendered": true,
+  "sdist_public_content_only": true,
+  "wheel_engine_byte_equal_source": true,
+  "sdist_engine_byte_equal_source": true,
+  "assets_and_examples_in_sdist": true,
+  "engine_sha256": "d8bd7fc3a6ef3d210bea304b6b0b4a0937eb6b3f5e4e024a0abf775f5ea8fb25",
+  "test_count_python_3_12": 106,
+  "test_count_python_3_14": 106,
+  "installed_wheel_import": true,
+  "FacePose_BodyPose_blend_and_registered_contact_smoke": true,
+  "foreground_shoulder_occlusion_smoke": true,
+  "sdist_checked_public_files": 76,
+  "sdist_exactly_matches_worktree": true,
+  "wheel_engine_exactly_matches_worktree": true,
+  "tests_python_3_12": 106,
+  "tests_python_3_14": 106
+}

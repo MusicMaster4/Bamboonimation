@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "bamboonimation"
+version = "0.1.0"
+description = "Code-first, deterministic 2D cartoon animation with a CPU Skia renderer"
+readme = "README.md"
+requires-python = ">=3.11"
+license = "PolyForm-Noncommercial-1.0.0"
+authors = [{name = "Bamboonimation contributors"}]
+keywords = ["animation", "2d", "cartoon", "skia", "creative-coding"]
+classifiers = ["Programming Language :: Python :: 3", "Topic :: Multimedia :: Graphics"]
+dependencies = ["skia-python>=138", "numpy>=1.26", "imageio-ffmpeg>=0.5"]
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "build>=1.2", "psutil>=6"]
+
+[project.scripts]
+bamboonimation = "bamboonimation.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/MusicMaster4/Bamboonimation"
+Issues = "https://github.com/MusicMaster4/Bamboonimation/issues"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]

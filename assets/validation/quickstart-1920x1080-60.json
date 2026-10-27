@@ -1,0 +1,60 @@
+{
+  "scene": "quickstart.py",
+  "output_sha256": "0f383b11eaf77dda23e2d2100804d8f465b75a32aa3255bd848b8e5540421dc3",
+  "scene_sha256": "113bbb9f42ce29e460d35aa467511294b4e30ef7362ead26065c521b8094b29c",
+  "engine_sha256": "d8bd7fc3a6ef3d210bea304b6b0b4a0937eb6b3f5e4e024a0abf775f5ea8fb25",
+  "audio_assets_sha256": {
+    "paper_moon.wav": "9078c8d34be311bbc055a2313c5424d183d8d9ada63a0b9636bf5b1ee75c233a",
+    "tea_for_two.wav": "21ba5f5b013b1e3c5d0116667d6efe101523418c2b7e24baeda88d271e331b46",
+    "the_last_cookie.wav": "502f93a3d777b45e0f5da0980af6848754f171764a71ec326511445bc51bf1da"
+  },
+  "input_snapshot_stable_during_render": true,
+  "input_snapshot_after_render": {
+    "scene_sha256": "113bbb9f42ce29e460d35aa467511294b4e30ef7362ead26065c521b8094b29c",
+    "engine_sha256": "d8bd7fc3a6ef3d210bea304b6b0b4a0937eb6b3f5e4e024a0abf775f5ea8fb25",
+    "audio_assets_sha256": {
+      "paper_moon.wav": "9078c8d34be311bbc055a2313c5424d183d8d9ada63a0b9636bf5b1ee75c233a",
+      "tea_for_two.wav": "21ba5f5b013b1e3c5d0116667d6efe101523418c2b7e24baeda88d271e331b46",
+      "the_last_cookie.wav": "502f93a3d777b45e0f5da0980af6848754f171764a71ec326511445bc51bf1da"
+    }
+  },
+  "audio_asset_snapshot_scope": "All repository assets/audio/*.wav at measurement start/end; this inventory does not assert that every file is used by this scene.",
+  "environment": {
+    "os": "Windows",
+    "python": "3.14.6",
+    "logical_cpus": 24,
+    "physical_ram_gib": 63.91,
+    "dependencies": {
+      "skia-python": "144.0.post2",
+      "numpy": "2.5.3",
+      "imageio-ffmpeg": "0.6.0"
+    }
+  },
+  "render": {
+    "output": "quickstart.mp4",
+    "width": 1920,
+    "height": 1080,
+    "fps": "60",
+    "frames": 600,
+    "start": 0.0,
+    "end": 10.0,
+    "duration": 10.0,
+    "elapsed_seconds": 38.09744030000002,
+    "frames_per_second": 15.74908957859827,
+    "realtime_factor": 0.26248482630997116,
+    "bytes": 2049985,
+    "supersample": 1,
+    "transparent": false,
+    "threads": 2,
+    "format": "mp4",
+    "encoder_preset": "fast",
+    "encoder_crf": 18
+  },
+  "process_wall_seconds": 38.553,
+  "peak_summed_rss_mib": 425.01,
+  "sampled_cpu_seconds": 52.547,
+  "average_cpu_cores": 1.363,
+  "sampling_interval_seconds": 0.05,
+  "samples": 585,
+  "method": "One child Python process plus its FFmpeg descendants; observer process excluded. RSS summed at observations, shared pages may be counted twice; transient peaks may be missed. CPU is the sum of last observed cumulative user+system times per process identity, so exited/brief processes and work after their last observation may be missed. Average CPU cores is sampled CPU seconds divided by child wall time, not machine CPU percent. Includes import/startup; nominal50ms interval plus observation overhead. No network or generative inference."
+}

@@ -1,0 +1,33 @@
+# Environments, builds, editor state
+.venv*/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+build/
+dist/
+.coverage
+htmlcov/
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Local exports and diagnostics; publish curated samples deliberately
+renders/
+output/
+preview/
+*.log
+*.tmp
+*.partial.*
+
+# Private configuration and credentials
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+credentials*.json
+secrets*.json

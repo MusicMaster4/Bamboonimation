@@ -1,0 +1,74 @@
+{
+  "reference": {
+    "title": "CEREAL!",
+    "url": "https://www.youtube.com/watch?v=nCKwUB8EVbc",
+    "frames_decoded": 2035,
+    "fps": 24,
+    "sequential_contact_sheets": 85,
+    "thumbnail_resolution": [
+      320,
+      180
+    ],
+    "temporal_subsampling": false,
+    "reviewers": "Five AI agents; selected native720p details; not human certification"
+  },
+  "tea_rounds": 8,
+  "final_review": {
+    "file": "tea_for_two.mp4",
+    "sha256": "66e8791de566da2489e57127f47f819af39cc62172a01291964deec63d817078",
+    "reviewed_frames": 360,
+    "frame_order": "consecutive",
+    "native_frame_details": [
+      33,
+      44,
+      70,
+      118,
+      121,
+      126,
+      130,
+      134,
+      139,
+      143,
+      147,
+      149,
+      154,
+      160,
+      180,
+      184,
+      240
+    ],
+    "reviewers": "Root plus two AI agents; motor author reviewed integration; another agent independently reviewed film. Root verified Chrome1x start/end; no perceptual audio listening claim.",
+    "criteria": {
+      "anticipation_and_counterpose": "pass",
+      "fixed_support_and_weight": "pass",
+      "authored_clothing_volume": "pass",
+      "identity_and_connected_silhouettes": "pass",
+      "grip_release_and_occlusion": "pass",
+      "staggered_recovery": "pass",
+      "motivated_staging_and_consistent_finish": "pass",
+      "complete_decoding_and_1x_playback": "pass"
+    },
+    "resolved_final_defect": "Proximal sleeve cap stays under exact coat boundary in foreground pass; decoded native44/149/180 rechecked.",
+    "scope": "Comparable cartoon language and consistency in the reviewed original action. New scenes still require artistic authorship and visual review."
+  },
+  "other_previews": [
+    {
+      "file": "the_last_cookie.mp4",
+      "sha256": "b6247e8af67d39c872c7f41dd6fdead7bc3eac302c222e3bb32f92895637203a",
+      "all_frames_reviewed": 360,
+      "same_bytes_as_prior_reviewed_export": true
+    },
+    {
+      "file": "versatility.mp4",
+      "sha256": "05f3b0c1eaf61a606a69e51ee9c55a9db80873a0bb43e4996afb13127206ed0a",
+      "all_frames_reviewed": 360,
+      "same_bytes_as_prior_reviewed_export": true
+    },
+    {
+      "file": "paper_moon.mp4",
+      "sha256": "2ee6c81539e1841d39d16afe23392a153a5f75d81491155c06d1786f0f34cc64",
+      "all_frames_reviewed": 360,
+      "same_bytes_as_prior_reviewed_export": true
+    }
+  ]
+}
