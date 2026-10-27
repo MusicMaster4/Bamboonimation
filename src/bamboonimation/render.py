@@ -8,6 +8,7 @@ import json
 import math
 import os
 import shutil
+import signal
 import subprocess
 import tempfile
 import time
@@ -28,6 +29,24 @@ def ffmpeg_executable() -> str:
         return imageio_ffmpeg.get_ffmpeg_exe()
     except (ImportError, RuntimeError) as exc:
         raise RuntimeError("FFmpeg unavailable. Install ffmpeg or imageio-ffmpeg.") from exc
+
+
+def _terminate_encoder(process):
+    """Stop the owned encoder tree, including executable launchers/shims."""
+    if sys.platform == "win32":
+        # Chocolatey and other launchers can keep the real encoder in a child.
+        # Killing only the launcher leaves that child holding the temp output.
+        subprocess.run(["taskkill", "/PID", str(process.pid), "/T", "/F"],
+                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                       check=False)
+    else:
+        try:
+            os.killpg(process.pid, signal.SIGKILL)
+        except ProcessLookupError:
+            pass
+    if process.poll() is None:
+        process.kill()
+    process.wait()
 
 
 def frame_rate(value) -> Fraction:
@@ -238,7 +257,8 @@ def render(scene, output, *, width=None, height=None, fps=24, start=0.0, end=Non
             command.extend(["-threads", str(threads), "-frames:v", str(frame_count), "-t", str(duration), "-f", extension, str(temp)])
             # A temporary stderr file prevents pipe deadlocks and preserves diagnostics.
             with tempfile.TemporaryFile() as stderr:
-                process = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.DEVNULL, stderr=stderr)
+                process = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.DEVNULL,
+                                           stderr=stderr, start_new_session=sys.platform != "win32")
                 try:
                     for index in range(frame_count):
                         image = frame(scene, start + float(index / fps), width=width, height=height, supersample=supersample)
@@ -254,8 +274,7 @@ def render(scene, output, *, width=None, height=None, fps=24, start=0.0, end=Non
                             process.stdin.close()
                         except BrokenPipeError:
                             pass
-                    process.kill()
-                    process.wait()
+                    _terminate_encoder(process)
                     stderr.seek(0)
                     diagnostics = stderr.read().decode("utf-8", errors="replace").strip()
                     if diagnostics:

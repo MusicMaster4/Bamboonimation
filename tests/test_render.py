@@ -96,6 +96,77 @@ def test_painter_failure_preserves_existing_output(tmp_path):
     assert sorted(p.name for p in tmp_path.iterdir()) == ["previous.mp4"]
 
 
+def test_painter_failure_stops_encoder_launcher_and_child(tmp_path, monkeypatch):
+    """A launcher must not leave an encoder child alive with the output open."""
+    import importlib
+    import sys
+    import time
+    import psutil
+
+    renderer = importlib.import_module("bamboonimation.render")
+    helper = tmp_path / "encoder_launcher.py"
+    ready = tmp_path / "encoder-ready.json"
+    helper.write_text(
+        "import json, os, subprocess, sys, time\n"
+        "from pathlib import Path\n"
+        "if sys.argv[1] == '--child':\n"
+        "    with open(sys.argv[-1], 'wb') as output:\n"
+        "        ready = Path(sys.argv[2])\n"
+        "        pending = ready.with_suffix('.pending')\n"
+        "        pending.write_text(json.dumps({'parent': os.getppid(), 'child': os.getpid()}))\n"
+        "        pending.replace(ready)\n"
+        "        while sys.stdin.buffer.read(4096):\n"
+        "            pass\n"
+        "        time.sleep(60)\n"
+        "else:\n"
+        "    subprocess.Popen([sys.executable, __file__, '--child', sys.argv[1], sys.argv[-1]]).wait()\n",
+        encoding="utf-8")
+    original_popen = subprocess.Popen
+
+    def launch(command, **kwargs):
+        if command[0] == "test-encoder-launcher":
+            command = [sys.executable, str(helper), str(ready), command[-1]]
+        return original_popen(command, **kwargs)
+
+    monkeypatch.setattr(renderer, "ffmpeg_executable", lambda: "test-encoder-launcher")
+    monkeypatch.setattr(renderer.subprocess, "Popen", launch)
+
+    def broken(c, t):
+        if t >= .1:
+            deadline = time.monotonic() + 10
+            while not ready.exists() and time.monotonic() < deadline:
+                time.sleep(.01)
+            assert ready.exists(), "encoder child did not start"
+            raise ValueError("bad drawing")
+
+    def running(pid):
+        try:
+            process = psutil.Process(pid)
+            return process.is_running() and process.status() != psutil.STATUS_ZOMBIE
+        except psutil.NoSuchProcess:
+            return False
+
+    output = tmp_path / "previous.mp4"
+    output.write_bytes(b"existing-content")
+    try:
+        with pytest.raises(ValueError, match="bad drawing"):
+            render(Scene(width=64, height=48, duration=.3, painter=broken),
+                   output, overwrite=True, fps=10)
+        pids = json.loads(ready.read_text())
+        deadline = time.monotonic() + 3
+        while any(running(pid) for pid in pids.values()) and time.monotonic() < deadline:
+            time.sleep(.01)
+        assert not any(running(pid) for pid in pids.values())
+        assert output.read_bytes() == b"existing-content"
+        assert not list(tmp_path.glob(".*.tmp*"))
+    finally:
+        # Keep a failing regression from leaking the deliberately waiting child.
+        if ready.exists():
+            for pid in json.loads(ready.read_text()).values():
+                if running(pid):
+                    psutil.Process(pid).kill()
+
+
 def test_png_alpha_sequence_and_no_directory_deletion(tmp_path):
     scene = tiny_scene(background=None)
     output = tmp_path / "sequence"
