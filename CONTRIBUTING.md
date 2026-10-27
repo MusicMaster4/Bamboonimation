@@ -14,6 +14,8 @@ py -3.12 -m venv .venv
 
 Em Linux/macOS use `python3 -m venv .venv` e `.venv/bin/python`. Não é necessário ativar o ambiente. No Ubuntu/Debian, instale também `libegl1` conforme as [instruções de instalação](README.md#linux-e-macos); o wheel do Skia precisa dessa biblioteca mesmo para renderizar em CPU.
 
+Para executar também os dois testes que inspecionam metadados de vídeo e áudio, disponibilize `ffprobe` no PATH (pacote `ffmpeg`: `sudo apt-get install --yes ffmpeg` no Ubuntu/Debian ou `choco install ffmpeg --yes` no Windows com Chocolatey). Sem essa ferramenta, esses dois testes são pulados; os demais continuam sendo executados. O CI instala a ferramenta nas duas plataformas. Ela é uma dependência de verificação; a exportação normal pode usar o FFmpeg fornecido por `imageio-ffmpeg`.
+
 ## Fluxo
 
 1. Abra uma issue para mudanças extensas de API, licença ou formato de cena.

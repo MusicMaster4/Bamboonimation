@@ -17,11 +17,16 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
-      - name: Install Skia runtime library (Ubuntu)
+      - name: Install Skia runtime and media inspection tools (Ubuntu)
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install --yes libegl1
+          sudo apt-get install --yes libegl1 ffmpeg
+      - name: Install media inspection tools (Windows)
+        if: runner.os == 'Windows'
+        run: choco install ffmpeg --yes --no-progress --limit-output
+      - name: Verify media inspection tool
+        run: ffprobe -version
       - run: python -m pip install -e ".[dev]"
       - run: python -m pytest
       - run: python -m bamboonimation doctor
