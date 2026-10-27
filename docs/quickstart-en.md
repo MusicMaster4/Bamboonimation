@@ -6,6 +6,15 @@ The software is **source-available under the PolyForm Noncommercial License 1.0.
 
 ## Install
 
+On Ubuntu/Debian, install the Skia wheel's system runtime library first, including on headless machines:
+
+```bash
+sudo apt-get update
+sudo apt-get install --yes libegl1
+```
+
+Rendering still uses the CPU. Other Linux distributions need the equivalent package providing `libEGL.so.1`; this step does not apply to macOS or Windows.
+
 ```bash
 git clone https://github.com/MusicMaster4/Bamboonimation.git
 cd Bamboonimation

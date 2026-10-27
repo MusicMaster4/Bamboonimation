@@ -60,6 +60,15 @@ Os comandos abaixo usam `python` por brevidade. Para executar sem ativar o ambie
 
 ### Linux e macOS
 
+No Ubuntu/Debian, instale a biblioteca de sistema exigida pelo wheel do Skia antes de executar o Python, inclusive em servidores sem interface gráfica:
+
+```bash
+sudo apt-get update
+sudo apt-get install --yes libegl1
+```
+
+A renderização continua sendo feita em CPU. Outras distribuições precisam do pacote equivalente que fornece `libEGL.so.1`; o comando `apt-get` não se aplica ao macOS.
+
 ```bash
 git clone https://github.com/MusicMaster4/Bamboonimation.git
 cd Bamboonimation
@@ -297,6 +306,7 @@ Depois renderize um rascunho 640x360 e o vídeo final.
 | --- | --- |
 | `No module named bamboonimation` | Execute com o Python do ambiente onde rodou `pip install -e .` |
 | Falha ao instalar Skia | Compatibilidade de wheel com Python/SO/arquitetura; tente Python 3.12 |
+| `ImportError: libEGL.so.1` no Linux | Instale `libegl1` no Ubuntu/Debian, conforme a seção de instalação |
 | FFmpeg não encontrado | Rode `doctor`; verifique a instalação de `imageio-ffmpeg` ou o FFmpeg no PATH |
 | Arquivo de saída já existe | Use outro nome ou a opção explícita de sobrescrita mostrada no `--help` |
 | Rosto/mão deslocado | Confira os pivôs, a ordem de transformações e o frame exato do contato |

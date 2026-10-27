@@ -12,7 +12,7 @@ py -3.12 -m venv .venv
 .\.venv\Scripts\python.exe -m pytest
 ```
 
-Em Linux/macOS use `python3 -m venv .venv` e `.venv/bin/python`. Não é necessário ativar o ambiente.
+Em Linux/macOS use `python3 -m venv .venv` e `.venv/bin/python`. Não é necessário ativar o ambiente. No Ubuntu/Debian, instale também `libegl1` conforme as [instruções de instalação](README.md#linux-e-macos); o wheel do Skia precisa dessa biblioteca mesmo para renderizar em CPU.
 
 ## Fluxo
 
