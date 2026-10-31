@@ -70,15 +70,18 @@ Leia [atuação e exposições](acting.md), [deformação](deformation.md) e [ef
 
 ```bash
 python -m bamboonimation doctor
-python -m bamboonimation frame examples/tea_for_two.py --time 0 -o renders/review-00.png --width 640 --height 360
-python -m bamboonimation frame examples/tea_for_two.py --time 3 -o renders/review-03.png --width 640 --height 360
+python -m bamboonimation sheet examples/tea_for_two.py -o renders/review-overview.png --count 12
 python -m bamboonimation frame examples/tea_for_two.py --time 6 -o renders/review-06.png --width 640 --height 360
-python -m bamboonimation frame examples/tea_for_two.py --time 9 -o renders/review-09.png --width 640 --height 360
-python -m bamboonimation frame examples/tea_for_two.py --time 11 -o renders/review-11.png --width 640 --height 360
 python -m bamboonimation render examples/tea_for_two.py -o renders/draft.mp4 --width 640 --height 360 --fps 24
 ```
 
-Use novos nomes ou `--overwrite` quando quiser substituir arquivos já revisados. Os cinco frames acima são uma triagem inicial, insuficiente para aprovar a animação.
+Use novos nomes ou `--overwrite` quando quiser substituir arquivos já revisados. A folha de 12 frames é uma triagem inicial, insuficiente para aprovar a animação. Para uma ação, gere a folha com todos os frames consecutivos do intervalo, exatamente como serão exportados:
+
+```bash
+python -m bamboonimation sheet examples/tea_for_two.py -o renders/review-salto.png --start 4.6 --end 6.3 --every-frame --fps 24 --width 320
+```
+
+Cada célula traz tempo e número do frame, para registrar defeitos com índice exato. Inspecione rosto, dedos, linha e clipping também com `frame` na resolução de entrega.
 
 No render produzido, examine **todos os frames consecutivos de cada ação**, incluindo aproximação, pega, impacto, soltura, desenho substituto, smear e recuperação, com alguns frames antes/depois. Revise todos os cortes e todas as bordas de enquadramento. Para curtas de 15 segundos a 24 fps, uma revisão sequencial integral cobre 360 frames por arquivo; folhas de contato sem saltos ajudam a assegurar cobertura, mas os detalhes de rosto, dedos, linha e clipping precisam também de inspeção na resolução de entrega.
 

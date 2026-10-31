@@ -308,7 +308,8 @@ def test_preview_playback_displays_completed_frames_while_next_time_is_pending()
         pytest.skip("Node is optional; browser preview integration is tested separately")
     from bamboonimation.preview import _HTML
     script = _HTML.split("<script>", 1)[1].split("</script>", 1)[0]
-    script = script.replace("__DURATION__", "12").replace("__TOKEN__", '\"test-token\"')
+    script = (script.replace("__DURATION__", "12").replace("__TOKEN__", '\"test-token\"')
+              .replace("__FPS__", "24").replace("__LIVE__", "false"))
     driver = r"""
 const vm = require('node:vm');
 const fs = require('node:fs');
@@ -346,3 +347,121 @@ vm.runInNewContext(source, {
 """
     result = subprocess.run([node, "-e", driver], input=json.dumps(script), capture_output=True, text=True)
     assert result.returncode == 0, result.stderr
+
+
+def test_supersample_is_an_exact_box_filter():
+    # A white column one third of a pixel wide: with supersample=3 exactly one of
+    # the three sub-pixel columns is covered, so the pixel must be one-third lit.
+    scene = Scene(width=4, height=4, duration=1, background="#000000",
+                  painter=lambda c, t: c.rect(0, 0, 1 / 3, 4, fill="#ffffff"))
+    for factor, expected in ((2, 128), (3, 85), (4, 128)):
+        width = 1 / 2 if factor in (2, 4) else 1 / 3
+        scene.painter = lambda c, t, width=width: c.rect(0, 0, width, 4, fill="#ffffff")
+        pixels = frame(scene, 0, supersample=factor).toarray(colorType=skia.ColorType.kRGBA_8888_ColorType)
+        assert abs(int(pixels[2, 0, 0]) - expected) <= 1, factor
+        assert tuple(pixels[2, 1, :3]) == (0, 0, 0)
+
+
+SCENE_FILE = '''
+from bamboonimation import Scene
+
+def paint(c, t):
+    c.ellipse(16 + t * 60, 24, 8, 8, fill="#f6e3a1")
+    if t > {fail_after}:
+        raise ValueError("bad drawing")
+
+scene = Scene(width=64, height=48, duration={duration}, background="#123456", painter=paint)
+'''
+
+
+def write_scene(path, duration=.5, fail_after=99):
+    path.write_text(SCENE_FILE.format(duration=duration, fail_after=fail_after), encoding="utf-8")
+    return path
+
+
+def test_parallel_render_matches_serial_frames(tmp_path):
+    scene = load_scene(write_scene(tmp_path / "scene.py"))
+    serial = render(scene, tmp_path / "serial", format="png", fps=24)
+    parallel = render(scene, tmp_path / "parallel", format="png", fps=24, workers=3)
+    assert (serial.frames, parallel.frames, parallel.workers) == (12, 12, 3)
+    for index in range(12):
+        name = f"{index:06d}.png"
+        assert (tmp_path / "serial" / name).read_bytes() == (tmp_path / "parallel" / name).read_bytes()
+
+
+def test_parallel_render_reports_worker_failure_and_keeps_output(tmp_path):
+    scene = load_scene(write_scene(tmp_path / "scene.py", fail_after=.2))
+    output = tmp_path / "previous.mp4"
+    output.write_bytes(b"existing-content")
+    with pytest.raises((ValueError, RuntimeError), match="bad drawing"):
+        render(scene, output, overwrite=True, fps=24, workers=2)
+    assert output.read_bytes() == b"existing-content"
+    assert not list(tmp_path.glob(".*.tmp*"))
+
+
+def test_parallel_render_rejects_unshareable_scene_before_output(tmp_path):
+    with pytest.raises(ValueError, match="workers"):
+        render(tiny_scene(), tmp_path / "out.mp4", workers=2)
+    with pytest.raises(ValueError, match="workers"):
+        render(tiny_scene(), tmp_path / "out.mp4", workers=0)
+    assert not list(tmp_path.iterdir())
+
+
+def test_contact_sheet_and_cli(tmp_path):
+    from bamboonimation.render import contact_sheet
+    path = contact_sheet(tiny_scene(), tmp_path / "sheet.png", [0, .1, .2, .3, .4], cell_width=64, columns=3)
+    image = skia.Image.MakeFromEncoded(path.read_bytes())
+    # 3 columns x 2 rows of 64x48 cells, an 8 px gap and a 22 px label strip.
+    assert (image.width(), image.height()) == (8 + 3 * 72, 8 + 2 * (48 + 22 + 8))
+    with pytest.raises(FileExistsError):
+        contact_sheet(tiny_scene(), path, [0])
+    with pytest.raises(ValueError):
+        contact_sheet(tiny_scene(), tmp_path / "bad.png", [5])
+    scene_file = write_scene(tmp_path / "scene.py")
+    assert main(["sheet", str(scene_file), "-o", str(tmp_path / "every.png"), "--every-frame",
+                 "--fps", "12", "--width", "64", "--columns", "6"]) == 0
+    image = skia.Image.MakeFromEncoded((tmp_path / "every.png").read_bytes())
+    assert (image.width(), image.height()) == (8 + 6 * 72, 8 + 1 * (48 + 22 + 8))
+
+
+def test_preview_reloads_scene_and_keeps_last_good_version(tmp_path, capsys):
+    import os
+    import time
+    scene_file = write_scene(tmp_path / "scene.py", duration=.5)
+    server = make_server(load_scene(scene_file), width=64, height=48, source=scene_file)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+
+    def state():
+        time.sleep(.3)  # File checks are throttled to four per second.
+        with urllib.request.urlopen(server.preview_url + "state") as response:
+            return json.loads(response.read())
+
+    def touch_later(path, step):
+        stamp = path.stat().st_mtime_ns + step * 10**9
+        os.utime(path, ns=(stamp, stamp))
+
+    try:
+        assert state() == {"version": 1, "duration": .5, "error": None}
+        write_scene(scene_file, duration=2)
+        touch_later(scene_file, 1)
+        assert state() == {"version": 2, "duration": 2, "error": None}
+        with urllib.request.urlopen(server.preview_url + "frame?t=1.5") as response:
+            assert response.read().startswith(b"\x89PNG")
+        scene_file.write_text("def broken(:\n", encoding="utf-8")
+        touch_later(scene_file, 2)
+        broken = state()
+        assert broken["version"] == 3 and "SyntaxError" in broken["error"] and broken["duration"] == 2
+        with urllib.request.urlopen(server.preview_url + "frame?t=1.5") as response:
+            assert response.read().startswith(b"\x89PNG")
+        write_scene(scene_file, duration=2, fail_after=.1)
+        touch_later(scene_file, 3)
+        assert state()["error"] is None
+        with pytest.raises(urllib.error.HTTPError) as exc:
+            urllib.request.urlopen(server.preview_url + "frame?t=1")
+        assert exc.value.code == 500 and b"ValueError: bad drawing" in exc.value.read()
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=3)
+    assert "Traceback" in capsys.readouterr().err

@@ -252,6 +252,7 @@ A [referência de API](docs/api.md) detalha os objetos públicos e as opções d
 ```bash
 python -m bamboonimation render --help
 python -m bamboonimation frame --help
+python -m bamboonimation sheet --help
 python -m bamboonimation preview --help
 python -m bamboonimation init --help
 ```
@@ -264,9 +265,19 @@ O acesso a `Canvas.raw` permite usar o Skia diretamente quando um desenho precis
 python -m bamboonimation preview examples/tea_for_two.py
 ```
 
+Salve o arquivo da cena e o preview recarrega sozinho, mantendo o tempo atual; erros de carga ou de desenho aparecem na página e o traceback no terminal. As setas do teclado avançam e recuam um frame por vez.
+
 O preview serve para revisar quadros e tempos no navegador local. Ele exibe imagens PNG em uma timeline **silenciosa**: não reproduz `scene.audio`. Sob carga, pode omitir instantes solicitados para acompanhar o relógio; não é uma prova de reprodução de todos os frames, sincronização de áudio ou desempenho em tempo real. Para avaliar ritmo e som, assista ao MP4 exportado em velocidade normal. Confira as opções de porta e resolução com `preview --help`. Mantenha o servidor em localhost e encerre-o com `Ctrl+C` quando terminar. Renderização e preview executam o arquivo de cena; use apenas código confiável.
 
+Para revisar muitos frames de uma vez, gere uma folha de contato com tempo e número de frame em cada célula:
+
+```bash
+python -m bamboonimation sheet examples/tea_for_two.py -o renders/salto.png --start 4.6 --end 6.3 --every-frame
+```
+
 ## Custo e desempenho
+
+O comando `render` usa vários processos por padrão (`--workers auto`, até 8) e entrega os frames ao encoder na ordem; o vídeo é o mesmo de um render serial. Em um Windows com 24 núcleos lógicos, `tea_for_two.py` completo com `--supersample 2` levou 333 s em série, 58 s com 8 workers e 38 s com `--workers 16`. Use `--workers 1` para medir ou depurar em um único processo.
 
 A renderização dos exemplos é local e não exige tokens, assinatura ou uma API generativa. Se você usar um agente de IA para escrever código ou contratar assets, esses custos pertencem às ferramentas escolhidas, não ao motor de renderização.
 

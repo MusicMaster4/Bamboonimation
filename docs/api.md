@@ -238,15 +238,27 @@ report = render(scene, "renders/film.mp4", width=1280, height=720,
 print(report.to_dict())
 ```
 
-`frame(scene,t,width=None,height=None,supersample=1)` devolve uma `skia.Image`. `save_frame` escreve PNG. `render` devolve `RenderReport`; por padrão também produz um relatório de renderização. Não interprete throughput de uma cena como garantia de desempenho para todas as outras.
+`frame(scene,t,width=None,height=None,supersample=1)` devolve uma `skia.Image`. Com `supersample=N`, cada pixel final é a média exata dos N × N subpixels. `save_frame` escreve PNG. `render` devolve `RenderReport`; por padrão também produz um relatório de renderização. Não interprete throughput de uma cena como garantia de desempenho para todas as outras.
 
-Parâmetros de `render`: `width`, `height`, `fps`, `start=0`, `end=None`, `supersample=1`, `overwrite=False`, `transparent=False`, `threads=2`, `preset='fast'`, `crf=18`, `format=None`, `report=True`, `progress=None`.
+Parâmetros de `render`: `width`, `height`, `fps`, `start=0`, `end=None`, `supersample=1`, `overwrite=False`, `transparent=False`, `threads=2`, `preset='fast'`, `crf=18`, `format=None`, `report=True`, `progress=None`, `workers=1`.
+
+`workers=N` renderiza frames em N processos e os entrega ao encoder na ordem; o resultado é idêntico ao render serial, porque cada frame depende apenas de `t`. Cada processo reconstrói a cena: cenas obtidas com `load_scene()` são recarregadas do arquivo; as demais precisam ser serializáveis com `pickle` (painters definidos no nível do módulo, não lambdas). Num script com `render(..., workers=N)`, proteja a chamada com `if __name__ == "__main__":`. Cada worker ocupa sua própria memória de raster.
+
+```python
+from bamboonimation.render import contact_sheet, frame_times
+
+# Todos os frames exportados a 24 fps entre 4,6 s e 6,3 s, em uma única imagem.
+contact_sheet(scene, "renders/salto.png", frame_times(4.6, 6.3, 24), cell_width=240)
+```
+
+`contact_sheet(scene, output, times, cell_width=320, columns=None, fps=24, supersample=1, overwrite=False, workers=1, labels=True)` grava uma grade PNG com tempo e número de frame (`round(t * fps)`) sob cada célula. `frame_times(start, end, fps)` devolve exatamente os tempos que `render` amostra.
 
 ## CLI
 
 ```text
 bamboonimation render SCENE -o OUTPUT [opções]
 bamboonimation frame SCENE -o OUTPUT --time SEGUNDOS [opções]
+bamboonimation sheet SCENE -o SHEET.png [--count N | --every-frame] [opções]
 bamboonimation benchmark SCENE -o OUTPUT [opções de render]
 bamboonimation preview SCENE [opções]
 bamboonimation init DIRECTORY
@@ -261,6 +273,7 @@ bamboonimation doctor [--json]
 | `--fps 24` ou `--fps 24000/1001` | Taxa positiva inteira, decimal ou racional |
 | `--start SEC --end SEC` | Intervalo absoluto dentro da cena |
 | `--supersample N` | Render maior antes de reduzir; aumenta custo de memória/pixels |
+| `--workers auto` | Processos que renderizam frames em paralelo; `auto` usa até 8 núcleos e mantém clipes curtos em série |
 | `--threads 2` | Limite de threads solicitado ao encoder |
 | `--crf 18 --preset fast` | Controle de qualidade/velocidade para codecs que usam esses parâmetros |
 | `--format mp4/webm/mov/png` | Formato explícito; extensão costuma bastar para vídeo |
@@ -286,16 +299,29 @@ python -m bamboonimation render scene.py -o renders/sequence --format png --tran
 python -m bamboonimation frame scene.py -o renders/contact.png --time 2.4 --width 640 --height 360
 ```
 
+### Folhas de contato
+
+```bash
+# 12 frames distribuídos de 0 s ao fim da cena (padrão)
+python -m bamboonimation sheet scene.py -o renders/visao-geral.png
+# Todos os frames de uma ação, como serão exportados a 24 fps
+python -m bamboonimation sheet scene.py -o renders/acao.png --start 4.6 --end 6.3 --every-frame --fps 24
+```
+
+`--count N` distribui N tempos de `--start` a `--end`, inclusive. `--every-frame` usa os mesmos tempos do comando `render` no intervalo `[start, end)`. `--width` define a largura de cada célula (padrão 320), `--columns` fixa a grade e `--workers` funciona como no render. Uma folha aceita até 400 frames.
+
 A quantidade de frames cobre o intervalo com arredondamento para cima. Assim, a duração codificada pode exceder o intervalo solicitado por menos de um frame. Não prometa uma duração exata que não possa ser representada na taxa escolhida.
 
 ### Preview e scaffold
 
 ```bash
 python -m bamboonimation init minha_animacao
-python -m bamboonimation preview minha_animacao/scene.py --width 640 --height 360 --port 8765 --no-open
+python -m bamboonimation preview minha_animacao/scene.py --width 640 --height 360 --port 8765 --no-open --fps 24
 ```
 
-O preview usa somente `127.0.0.1`. A timeline solicita PNGs por tempo e é silenciosa: não reproduz `scene.audio`. Se a renderização não acompanhar o relógio, instantes intermediários podem ser omitidos. Use scrub para inspeção pontual e o vídeo exportado para avaliar cadência e áudio; o preview não é benchmark de reprodução em tempo real. `--no-open` evita abrir o navegador automaticamente. Encerre com `Ctrl+C`. Mudanças no arquivo exigem reiniciar o preview; não há hot reload. O comando `init` cria um ponto de partida; confira os nomes impressos pela CLI antes de editar.
+O preview usa somente `127.0.0.1`. A timeline solicita PNGs por tempo e é silenciosa: não reproduz `scene.audio`. Se a renderização não acompanhar o relógio, instantes intermediários podem ser omitidos. Use scrub para inspeção pontual e o vídeo exportado para avaliar cadência e áudio; o preview não é benchmark de reprodução em tempo real. As setas avançam ou recuam um frame na taxa de `--fps` (Shift+seta: um segundo; Home/End: extremos), e o relógio mostra o número do frame. `--no-open` evita abrir o navegador automaticamente. Encerre com `Ctrl+C`.
+
+Ao salvar qualquer arquivo `.py` da pasta da cena, o preview recarrega a cena (inclusive módulos auxiliares dessa pasta) e redesenha o tempo atual, sem reiniciar. Se o novo código falhar ao carregar, a página mostra o erro e continua exibindo a última versão válida; o traceback completo aparece no terminal. Erros de desenho também mostram tipo e mensagem na página. Use `--no-reload` para desativar a observação de arquivos. O comando `init` cria um ponto de partida; confira os nomes impressos pela CLI antes de editar.
 
 ## Sequências, partículas e cache de cenários
 
